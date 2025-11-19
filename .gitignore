@@ -1,0 +1,31 @@
+# Auto-generated .gitignore
+# -----------------------------
+
+# [System & Environments]
+__pycache__/
+.idea/
+venv/
+node_modules/
+env/
+.vscode/
+.ipynb_checkpoints/
+.git/
+*.DS_Store
+*.pyc
+
+# [Data & Copyrighted Material]
+*.txt
+*.jsonl
+*.pdf
+data/
+
+# [Models & Weights]
+adapters/
+output/
+checkpoint-*/
+
+# [Whitelisted Files] (Exceptions)
+!LICENSE.txt
+!CMakeLists.txt
+!README.txt
+!requirements.txt
