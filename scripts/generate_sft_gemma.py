@@ -107,13 +107,13 @@ def main():
         print(f"❌ 找不到文件: {INPUT_FILE}")
         return
 
-    print("📊 正在扫描数据集统计信息...")
+    print("📊 正在扫描数据集...")
+
+    # 1. 读取所有原始输入
     with open(INPUT_FILE, 'r', encoding='utf-8') as f:
         raw_lines = f.readlines()
 
-    total_raw = len(raw_lines)
-
-    # 预处理：筛选出有效行
+    # 2. 筛选有效数据
     valid_data = []
     for line in raw_lines:
         try:
@@ -125,30 +125,43 @@ def main():
             continue
 
     total_valid = len(valid_data)
+    print(f"   - 总有效任务数: {total_valid}")
 
-    print(f"   - 原始行数: {total_raw}")
-    print(f"   - 有效行数 (长度>={MIN_TEXT_LEN}): {total_valid}")
-    print(f"   - 过滤掉: {total_raw - total_valid} 行")
+    # ==================【关键升级：断点检测】==================
+    processed_count = 0
+    if os.path.exists(OUTPUT_FILE):
+        with open(OUTPUT_FILE, 'r', encoding='utf-8') as f_out_read:
+            # 统计输出文件里已经有多少行了
+            processed_count = sum(1 for _ in f_out_read)
+        print(f"✅ 检测到历史记录: 已完成 {processed_count} 条")
 
-    # 决定要跑多少条
+    # 计算还需要跑多少
+    if processed_count >= total_valid:
+        print("🎉 所有数据已全部处理完毕！无需运行。")
+        return
+
+    # 自动跳过已经跑过的数据
+    # start_index 就是我们要开始的地方
+    start_index = processed_count
+
+    # 截取剩下的任务
+    remaining_data = valid_data[start_index:]
+    print(f"🚀 正在启动断点续传... 本次将从第 {start_index + 1} 条开始，处理剩余 {len(remaining_data)} 条。")
+    # =========================================================
+
     if TEST_MODE:
-        print("\n⚠️ 【测试模式】只处理前 10 条数据。")
-        target_data = valid_data[:10]
-    else:
-        print(f"\n🚀 【全量模式】准备处理所有 {total_valid} 条数据。")
-        target_data = valid_data
+        print("\n⚠️ 【测试模式】只跑 10 条看看。")
+        remaining_data = remaining_data[:10]
 
     # 加载模型
     model, tokenizer = load_model()
 
-    processed_count = 0
+    current_session_count = 0
 
-    # 开始跑
-    print(f"💾 结果将追加保存到: {OUTPUT_FILE}")
-
+    # 追加写入
     with open(OUTPUT_FILE, 'a', encoding='utf-8') as f_out:
-        # 使用 tqdm 显示进度
-        for text in tqdm(target_data, desc="Generating"):
+        # 这里的 tqdm 进度条会显示剩余的任务
+        for text in tqdm(remaining_data, desc="Resuming"):
 
             question = generate_question(model, tokenizer, text)
 
@@ -160,11 +173,10 @@ def main():
                 }
                 f_out.write(json.dumps(entry, ensure_ascii=False) + "\n")
                 f_out.flush()
-                processed_count += 1
+                current_session_count += 1
 
-    print(f"\n🎉 全部完成！")
-    print(f"   - 成功生成: {processed_count} 条")
-    print(f"   - 可以在 {OUTPUT_FILE} 查看结果")
+    print(f"\n🎉 本次运行结束！新增生成: {current_session_count} 条")
+
 
 
 if __name__ == "__main__":
