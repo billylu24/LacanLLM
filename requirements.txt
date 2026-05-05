@@ -1,0 +1,9 @@
+accelerate
+bitsandbytes
+datasets
+huggingface-hub
+numpy
+peft
+sentencepiece
+tqdm
+transformers

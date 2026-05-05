@@ -1,121 +1,138 @@
-import os
-import re
-import glob
+import argparse
 import json
-
-# ================= 配置区域 =================
-INPUT_FOLDER = "lacan_source_texts"  # 你的txt文件夹路径
-OUTPUT_FILE_TXT = "../data/lacan_full_corpus.txt"  # 输出的纯文本文件名
-OUTPUT_FILE_JSONL = "../data/lacan_dataset.jsonl"  # 输出的微调格式文件名
-MIN_PARAGRAPH_LEN = 50  # 过滤掉少于50个字符的段落（通常是页眉/标题/垃圾）
+import re
+from pathlib import Path
 
 
-# ===========================================
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_INPUT_DIR = PROJECT_ROOT / "data" / "lacan_source_texts"
+DEFAULT_CORPUS_FILE = PROJECT_ROOT / "data" / "lacan_full_corpus.txt"
+DEFAULT_DATASET_FILE = PROJECT_ROOT / "data" / "lacan_dataset.jsonl"
 
-def clean_text_block(text):
-    """
-    核心清洗逻辑：针对英文PDF转TXT的常见问题
-    """
-    # 1. 去除明显的页码 (单独一行的数字)
-    # 匹配：前后是换行符，中间只有数字和可能的空格
-    text = re.sub(r'\n\s*\d+\s*\n', '\n', text)
+MIN_PARAGRAPH_CHARS = 120
+MAX_PARAGRAPH_CHARS = 6000
 
-    # 2. 修复断词 (Hyphenation repair)
-    # PDF中常有 "uncon-\nscious"，合并为 "unconscious"
-    text = re.sub(r'(\w+)-\s*\n\s*(\w+)', r'\1\2', text)
-
-    # 3. 移除多余的空白字符，但保留换行符作为段落标记的线索
-    # 先把连续的非换行空白变成一个空格
-    text = re.sub(r'[ \t\r\f\v]+', ' ', text)
-
-    return text
+MOJIBAKE_MARKERS = ("鈥", "鈩", "漏", "禄", "脡", "锛", "绋", "馃")
 
 
-def reconstruct_paragraphs(text):
-    """
-    重组段落：
-    PDF转TXT通常每一行都有换行符。
-    策略：如果一行以标点符号(.?!)结尾，可能是一个段落的结束。
-    否则，应该把下一行拼接到这一行后面。
-    """
-    lines = text.split('\n')
-    paragraphs = []
-    buffer = ""
+def normalize_text(text: str) -> str:
+    text = text.replace("\ufeff", "")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[ \t\f\v]+", " ", text)
+    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
+    text = re.sub(r"(\w)-\s*\n\s*(\w)", r"\1\2", text)
+    text = re.sub(r"[ ]+\n", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue  # 跳过空行
 
-        # 如果buffer为空，直接开始新的一段
-        if not buffer:
-            buffer = line
-        else:
-            # 如果上一行以连接符结尾（虽然上面修过了，以防万一）或者不是句号结尾
-            # 我们假设它属于同一个段落，用空格连接
-            # 简单的启发式：如果上一行结束符不是 . ! ? " ”，则拼接到上一行
-            # 注意：拉康的句子很长，这里可能会有误判，但在大规模语料中通常可以接受
-            if buffer.endswith(('.', '!', '?', '"', '”', ':')):
-                # 上一段结束了，存入列表
-                paragraphs.append(buffer)
-                buffer = line
-            else:
-                # 拼接
-                buffer += " " + line
+def reconstruct_paragraphs(text: str) -> list[str]:
+    blocks = re.split(r"\n\s*\n", text)
+    paragraphs: list[str] = []
 
-    # 处理最后一段
-    if buffer:
-        paragraphs.append(buffer)
+    for block in blocks:
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        if not lines:
+            continue
+
+        merged = " ".join(lines)
+        merged = re.sub(r"\s+", " ", merged).strip()
+        if is_useful_paragraph(merged):
+            paragraphs.append(merged)
 
     return paragraphs
 
 
-def process_files():
-    all_paragraphs = []
+def is_useful_paragraph(text: str) -> bool:
+    if len(text) < MIN_PARAGRAPH_CHARS or len(text) > MAX_PARAGRAPH_CHARS:
+        return False
+    if text.count(" ") < 10:
+        return False
+    if re.fullmatch(r"[\W\d_]+", text):
+        return False
+    lowered = text.lower()
+    boilerplate = (
+        "contents",
+        "isbn",
+        "all rights reserved",
+        "library of congress",
+        "british library cataloguing",
+        "printed in",
+        "translation of:",
+        "translated by",
+        "published by",
+        "copyright",
+        "www.",
+    )
+    if any(term in lowered for term in boilerplate):
+        return False
+    if re.search(r"\b(london|new york|paris):\s+[a-z]", lowered):
+        return False
+    if re.search(r"\b\d{4}[;,.]\s+[A-Z][A-Za-z]+", text):
+        return False
+    if re.match(r"^\d+\s*\[", text):
+        return False
+    if "|" in text and len(text.split()) < 35:
+        return False
+    return True
 
-    # 获取所有txt文件
-    files = glob.glob(os.path.join(INPUT_FOLDER, "*.txt"))
-    print(f"Found {len(files)} text files in {INPUT_FOLDER}...")
 
-    for file_path in files:
-        print(f"Processing: {os.path.basename(file_path)}")
-        try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                raw_content = f.read()
+def mojibake_score(text: str) -> int:
+    return sum(text.count(marker) for marker in MOJIBAKE_MARKERS)
 
-            # 初步清洗
-            cleaned_content = clean_text_block(raw_content)
 
-            # 重组段落
-            paras = reconstruct_paragraphs(cleaned_content)
+def process_files(input_dir: Path, corpus_file: Path, dataset_file: Path) -> None:
+    source_files = sorted(input_dir.glob("*.txt"))
+    if not source_files:
+        raise FileNotFoundError(f"No .txt source files found in {input_dir}")
 
-            # 过滤过短的段落 (过滤掉目录、标题、页眉残留)
-            valid_paras = [p for p in paras if len(p) >= MIN_PARAGRAPH_LEN]
+    all_paragraphs: list[dict[str, str | int]] = []
+    mojibake_hits = 0
 
-            all_paragraphs.extend(valid_paras)
+    for file_path in source_files:
+        raw_content = file_path.read_text(encoding="utf-8", errors="replace")
+        cleaned = normalize_text(raw_content)
+        paragraphs = reconstruct_paragraphs(cleaned)
 
-        except Exception as e:
-            print(f"Error reading {file_path}: {e}")
+        for index, paragraph in enumerate(paragraphs):
+            score = mojibake_score(paragraph)
+            mojibake_hits += int(score > 0)
+            all_paragraphs.append(
+                {
+                    "text": paragraph,
+                    "source_file": file_path.name,
+                    "paragraph_index": index,
+                    "char_count": len(paragraph),
+                    "mojibake_score": score,
+                }
+            )
 
-    print(f"\nTotal paragraphs extracted: {len(all_paragraphs)}")
+        print(f"{file_path.name}: kept {len(paragraphs)} paragraphs")
 
-    # 写入合并的TXT (用于阅读检查)
-    with open(OUTPUT_FILE_TXT, 'w', encoding='utf-8') as f:
-        f.write('\n\n'.join(all_paragraphs))
-    print(f"Saved merged text to {OUTPUT_FILE_TXT}")
+    corpus_file.parent.mkdir(parents=True, exist_ok=True)
+    corpus_file.write_text(
+        "\n\n".join(item["text"] for item in all_paragraphs),
+        encoding="utf-8",
+    )
 
-    # 写入 JSONL (用于微调)
-    # 格式: {"text": "段落内容..."}
-    with open(OUTPUT_FILE_JSONL, 'w', encoding='utf-8') as f:
-        for p in all_paragraphs:
-            json_obj = {"text": p}
-            f.write(json.dumps(json_obj, ensure_ascii=False) + "\n")
-    print(f"Saved dataset to {OUTPUT_FILE_JSONL}")
+    with dataset_file.open("w", encoding="utf-8") as output:
+        for item in all_paragraphs:
+            output.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+    print(f"Total paragraphs kept: {len(all_paragraphs)}")
+    print(f"Paragraphs with mojibake markers: {mojibake_hits}")
+    print(f"Saved corpus: {corpus_file}")
+    print(f"Saved dataset: {dataset_file}")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Clean Lacan source txt files into JSONL.")
+    parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
+    parser.add_argument("--corpus-file", type=Path, default=DEFAULT_CORPUS_FILE)
+    parser.add_argument("--dataset-file", type=Path, default=DEFAULT_DATASET_FILE)
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    # 确保你的文件夹路径存在
-    if not os.path.exists(INPUT_FOLDER):
-        print(f"Error: Folder '{INPUT_FOLDER}' does not exist. Please create it and put txt files inside.")
-    else:
-        process_files()
+    args = parse_args()
+    process_files(args.input_dir, args.corpus_file, args.dataset_file)
