@@ -59,11 +59,11 @@ Recommended pipeline
 1. Clean source text:
    python scripts\clean_lacan.py
 2. Generate instruction/output pairs:
-   python scripts\generate_sft_gemma.py --model-id google/gemma-3-4b-it
+   python scripts\generate_sft_gemma.py --model-id google/gemma-4-E4B-it
 3. Prepare training data only:
-   python scripts\run_pipeline.py --prepare-only --model-id google/gemma-3-4b-it
+   python scripts\run_pipeline.py --prepare-only --model-id google/gemma-4-E4B-it
 4. Train LoRA adapter:
-   python scripts\run_pipeline.py --skip-prepare --model-id google/gemma-3-4b-it
+   python scripts\run_pipeline.py --skip-prepare --model-id google/gemma-4-E4B-it --auto-resume
 
 Data-cleaning review
 - The old cleaning script had path errors when run from the project root and joined lines based on sentence-ending punctuation. That can incorrectly merge independent lines or split long Lacanian sentences.
@@ -78,3 +78,4 @@ Training-logic review
 - Sorting by output length as a quality score is weak. It tends to overselect long passages and may bias training toward verbose answers.
 - A better training design is: preserve source metadata, generate candidate questions, sample/inspect a validation subset, filter malformed questions, split train/validation by source file, and evaluate with held-out passages/questions.
 - With 12GB VRAM, 4-bit QLoRA on a 4B model is realistic. Full fine-tuning is not realistic on this machine.
+- Training script update: run_pipeline.py now defaults to google/gemma-4-E4B-it, supports AutoProcessor/AutoTokenizer loading, creates train/validation JSONL splits, filters overlong passages before training, evaluates during training, writes adapter metadata, and can resume from the latest checkpoint with --auto-resume.
