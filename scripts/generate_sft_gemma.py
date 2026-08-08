@@ -27,7 +27,7 @@ from pathlib import Path
 
 import torch
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForMultimodalLM, AutoProcessor
 
 
 # 项目根目录。使用绝对路径可以避免“从不同目录运行脚本导致找不到文件”的问题。
@@ -36,13 +36,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # 输入来自 clean_lacan.py 的输出。
 DEFAULT_INPUT_FILE = PROJECT_ROOT / "data" / "lacan_dataset.jsonl"
 
-# 输出给 run_pipeline.py 使用。
-DEFAULT_OUTPUT_FILE = PROJECT_ROOT / "data" / "lacan_sft_pairs.jsonl"
+# 先写入 raw 文件，再由 quality_check.py 过滤成 canonical 文件。
+DEFAULT_OUTPUT_FILE = PROJECT_ROOT / "data" / "lacan_sft_pairs_raw.jsonl"
 
-# 默认用于生成问题的模型。
-# 如果你要用 Gemma 4，可以运行：
-#   python scripts/generate_sft_gemma.py --model-id google/gemma-4-E4B-it
-DEFAULT_MODEL_ID = "google/gemma-3-4b-it"
+# 项目固定使用的基础模型。训练脚本必须使用同一个模型。
+DEFAULT_MODEL_ID = "google/gemma-4-E2B-it"
 
 # 太短的段落通常没有足够语义，生成的问题也会很泛。
 MIN_TEXT_CHARS = 160
@@ -80,16 +78,15 @@ def load_model(model_id: str, token: str):
         负责把文本变成 token id，也负责把模型输出 id 解码回文字。
 
     model:
-        AutoModelForCausalLM 是“因果语言模型”，也就是根据前文继续生成文本的模型。
+    AutoModelForMultimodalLM 是 Gemma 4 使用的多模态因果语言模型。
     """
 
     # 这个脚本会加载 4B/8B 级别模型，没有 CUDA 会非常慢甚至不可用。
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA GPU is required for this generation script.")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id, token=token)
-
-    model = AutoModelForCausalLM.from_pretrained(
+    processor = AutoProcessor.from_pretrained(model_id, token=token)
+    model = AutoModelForMultimodalLM.from_pretrained(
         model_id,
 
         # bf16 在新 NVIDIA GPU 上通常更稳定；如果 GPU 不支持 bf16，就用 fp16。
@@ -107,10 +104,10 @@ def load_model(model_id: str, token: str):
 
     # eval() 表示推理模式，不启用 dropout，不记录训练梯度。
     model.eval()
-    return model, tokenizer
+    return model, processor
 
 
-def generate_question(model, tokenizer, lacan_text: str) -> str | None:
+def generate_question(model, processor, lacan_text: str) -> str | None:
     """
     给定一段拉康文本，让模型生成一个英文问题。
 
@@ -135,20 +132,16 @@ def generate_question(model, tokenizer, lacan_text: str) -> str | None:
     # apply_chat_template 会把 messages 变成模型真正需要的聊天格式。
     # tokenize=False 表示先返回字符串，不马上转 token。
     # add_generation_prompt=True 表示在末尾加上 assistant 开始回答的提示。
-    text_input = tokenizer.apply_chat_template(
+    inputs = processor.apply_chat_template(
         messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
-
-    # tokenizer(...) 把文本转成 PyTorch tensor。
-    # truncation=True 表示超过 MAX_INPUT_TOKENS 就截断。
-    inputs = tokenizer(
-        text_input,
+        tokenize=True,
+        return_dict=True,
         return_tensors="pt",
-        max_length=MAX_INPUT_TOKENS,
-        truncation=True,
-    ).to(model.device)
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
+    inputs = {key: value[:, -MAX_INPUT_TOKENS:] if value.ndim == 2 else value for key, value in inputs.items()}
+    inputs = {key: value.to(model.device) if hasattr(value, "to") else value for key, value in inputs.items()}
 
     # torch.no_grad() 表示不计算梯度，节省显存和时间。
     with torch.no_grad():
@@ -165,7 +158,7 @@ def generate_question(model, tokenizer, lacan_text: str) -> str | None:
             do_sample=True,
 
             # 如果模型没有显式 pad token，用 eos token 作为 padding。
-            pad_token_id=tokenizer.eos_token_id,
+            pad_token_id=processor.tokenizer.eos_token_id,
         )
 
     # outputs 包含“输入 prompt + 新生成内容”。
@@ -173,7 +166,7 @@ def generate_question(model, tokenizer, lacan_text: str) -> str | None:
     generated_ids = outputs[0][inputs["input_ids"].shape[-1] :]
 
     # decode 把 token id 转回字符串。
-    question = tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+    question = processor.decode(generated_ids, skip_special_tokens=True).strip()
 
     # 清理常见多余引号。
     question = question.strip('"').strip()
@@ -264,7 +257,7 @@ def main() -> None:
     print(f"This run: {len(remaining)}")
 
     token = require_hf_token()
-    model, tokenizer = load_model(args.model_id, token)
+    model, processor = load_model(args.model_id, token)
 
     # 确保输出目录存在。
     args.output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -272,18 +265,20 @@ def main() -> None:
     # 用 append 模式写入，这样中断后可以继续。
     with args.output_file.open("a", encoding="utf-8") as output:
         for row, text in tqdm(remaining, desc="Generating SFT pairs"):
-            question = generate_question(model, tokenizer, text)
+            question = generate_question(model, processor, text)
             if not question:
                 continue
 
             # instruction 是用户问题，output 是拉康文本段落。
             # source_file / paragraph_index 用于追踪来源。
             entry = {
+                "schema_version": 1,
                 "instruction": question,
                 "input": "",
                 "output": text,
                 "source_file": row.get("source_file"),
                 "paragraph_index": row.get("paragraph_index"),
+                "char_count": len(text),
             }
 
             output.write(json.dumps(entry, ensure_ascii=False) + "\n")

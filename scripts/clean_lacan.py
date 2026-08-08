@@ -44,13 +44,14 @@ MAX_PARAGRAPH_CHARS = 6000
 # 这里用 Unicode escape 写法，而不是直接写字符，是为了避免 Windows/GBK 终端再次把文件显示乱。
 # 这些 marker 只用于统计风险，不会自动删除对应段落。
 MOJIBAKE_MARKERS = (
-    "\u923f",  # 常见乱码片段之一
-    "\u6f0f",
-    "\u7984",
-    "\u8121",
-    "\u951b",
-    "\u7ecb",
-    "\u99c3",
+    "\ufffd",  # Unicode replacement character
+    "鈥",       # UTF-8 punctuation decoded as a legacy code page
+    "禄",
+    "漏",
+    "脡",
+    "锛",
+    "绔",
+    "骃",
 )
 
 
@@ -153,6 +154,10 @@ def is_useful_paragraph(text: str) -> bool:
     # lower() 用于大小写不敏感匹配。例如 ISBN / isbn 都能被检测。
     lowered = text.lower()
 
+    # 丢弃明显的编码损坏段落。保留轻微风险到元数据中会让乱码进入后续 SFT。
+    if mojibake_score(text) > 0:
+        return False
+
     # 这些通常是版权页、目录、出版信息、网页信息，不是拉康正文。
     boilerplate = (
         "contents",
@@ -166,6 +171,12 @@ def is_useful_paragraph(text: str) -> bool:
         "published by",
         "copyright",
         "www.",
+        "verso",
+        "routledge",
+        "seuil",
+        "preface by",
+        "typeset by",
+        "printed in",
     )
     if any(term in lowered for term in boilerplate):
         return False
@@ -198,7 +209,10 @@ def mojibake_score(text: str) -> int:
     我们把分数写入 JSONL，方便后续按分数过滤或抽样检查。
     """
 
-    return sum(text.count(marker) for marker in MOJIBAKE_MARKERS)
+    score = sum(text.count(marker) for marker in MOJIBAKE_MARKERS)
+    # 常见 OCR/转码残留的连续拉丁扩展字符组合。
+    score += len(re.findall(r"[鈥禄漏脡锛绔骃][A-Za-z一-龥]", text))
+    return score
 
 
 def process_files(input_dir: Path, corpus_file: Path, dataset_file: Path) -> None:

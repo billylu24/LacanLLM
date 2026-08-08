@@ -7,7 +7,7 @@ run_pipeline.py
 1. 读取 generate_sft_gemma.py 生成的 data/lacan_sft_pairs.jsonl
 2. 过滤过短、过长、质量较差的样本
 3. 拆分 train / validation
-4. 加载基础模型，例如 google/gemma-4-E4B-it
+4. 加载基础模型 google/gemma-4-E2B-it
 5. 使用 4-bit QLoRA 训练 LoRA adapter
 6. 保存 adapter 和训练元数据
 
@@ -32,6 +32,7 @@ import argparse
 import json
 import os
 import random
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -41,7 +42,7 @@ import torch
 from datasets import Dataset, load_dataset
 from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
-    AutoModelForCausalLM,
+    AutoModelForMultimodalLM,
     AutoProcessor,
     AutoTokenizer,
     BitsAndBytesConfig,
@@ -68,7 +69,8 @@ DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "adapters" / "lacan_lora"
 DEFAULT_CHECKPOINT_DIR = PROJECT_ROOT / "outputs"
 
 # 默认基础模型。Gemma 4 E4B 是当前更适合这个项目的默认选择。
-DEFAULT_MODEL_ID = "google/gemma-4-E4B-it"
+# 与 generate_sft_gemma.py 保持一致，避免使用不同基础模型生成/训练。
+DEFAULT_MODEL_ID = "google/gemma-4-E2B-it"
 
 # 单条样本最大 token 长度。2048 对 12GB 显存更稳。
 # 如果你想保留更长上下文，可以升到 4096，但显存压力会明显变大。
@@ -116,6 +118,20 @@ DEFAULT_LORA_TARGET_MODULES = (
     "up_proj",
     "down_proj",
 )
+
+
+def find_language_lora_targets(model) -> list[str]:
+    """Return only text-decoder projection names, excluding Gemma 4 vision/audio wrappers."""
+
+    suffixes = tuple(f".{name}" for name in DEFAULT_LORA_TARGET_MODULES)
+    targets = [
+        name
+        for name, _module in model.named_modules()
+        if name.startswith("model.language_model.layers.") and name.endswith(suffixes)
+    ]
+    if not targets:
+        raise RuntimeError("Could not find Gemma 4 language-model LoRA target modules.")
+    return targets
 
 
 def require_hf_token() -> str:
@@ -397,6 +413,27 @@ def find_latest_checkpoint(checkpoint_dir: Path) -> str | None:
     return str(max(checkpoints, key=lambda path: int(path.name.split("-")[-1])))
 
 
+def copy_adapter_checkpoint(checkpoint_dir: Path, output_dir: Path, tokenizer) -> None:
+    """Copy only PEFT adapter/tokenizer artifacts; never serialize the 5B base model again."""
+
+    checkpoint = find_latest_checkpoint(checkpoint_dir)
+    if not checkpoint:
+        raise FileNotFoundError(f"No Trainer checkpoint found in {checkpoint_dir}")
+    source_dir = Path(checkpoint)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    required = ("adapter_config.json", "adapter_model.safetensors")
+    for name in required:
+        source = source_dir / name
+        if not source.exists():
+            raise FileNotFoundError(source)
+        shutil.copy2(source, output_dir / name)
+    for name in ("README.md", "chat_template.jinja", "tokenizer.json", "tokenizer_config.json", "special_tokens_map.json"):
+        source = source_dir / name
+        if source.exists():
+            shutil.copy2(source, output_dir / name)
+    tokenizer.save_pretrained(output_dir)
+
+
 def save_training_metadata(args: argparse.Namespace, output_dir: Path, train_count: int, validation_count: int) -> None:
     """
     保存训练元数据。
@@ -411,7 +448,11 @@ def save_training_metadata(args: argparse.Namespace, output_dir: Path, train_cou
 
     metadata = {
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "experiment_name": args.experiment_name,
         "model_id": args.model_id,
+        "quantization_bits": args.quantization_bits,
+        "quantization_type": args.quantization_type if args.quantization_bits == 4 else None,
+        "double_quant": args.double_quant if args.quantization_bits == 4 else None,
         "max_seq_length": args.max_seq_length,
         "train_rows": train_count,
         "validation_rows": validation_count,
@@ -453,22 +494,19 @@ def train(args: argparse.Namespace) -> None:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    # 4-bit 量化配置，这是 QLoRA 的 Q。
-    quantization_config = BitsAndBytesConfig(
-        # 以 4-bit 加载基础模型，显著降低显存占用。
-        load_in_4bit=True,
+    if args.quantization_bits == 4:
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+            bnb_4bit_quant_type=args.quantization_type,
+            bnb_4bit_use_double_quant=args.double_quant,
+        )
+    elif args.quantization_bits == 8:
+        quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+    else:
+        raise ValueError("quantization_bits must be 4 or 8")
 
-        # 计算时使用 bf16 或 fp16。RTX 5070 支持 bf16，所以通常会选 bf16。
-        bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
-
-        # nf4 是 QLoRA 论文中常用的 4-bit quantization 类型，适合正态分布权重。
-        bnb_4bit_quant_type="nf4",
-
-        # double quantization 会进一步压缩量化参数，节省显存。
-        bnb_4bit_use_double_quant=True,
-    )
-
-    model = AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForMultimodalLM.from_pretrained(
         args.model_id,
         token=token,
 
@@ -485,10 +523,11 @@ def train(args: argparse.Namespace) -> None:
     # 训练时关闭 cache，因为 gradient checkpointing 和 cache 通常不兼容。
     model.config.use_cache = False
 
-    # 对 4-bit 模型做 PEFT/QLoRA 训练前准备。
+    # 对量化模型做 PEFT/QLoRA 训练前准备。
     model = prepare_model_for_kbit_training(model)
 
     # LoRA 超参数配置。
+    lora_targets = find_language_lora_targets(model)
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
 
@@ -508,7 +547,7 @@ def train(args: argparse.Namespace) -> None:
         bias="none",
 
         # 指定把 LoRA 插入哪些模块。
-        target_modules=list(DEFAULT_LORA_TARGET_MODULES),
+        target_modules=lora_targets,
     )
 
     # 把 LoRA adapter 挂到基础模型上。
@@ -616,19 +655,22 @@ def train(args: argparse.Namespace) -> None:
         if resume_checkpoint:
             print(f"Auto-resuming from {resume_checkpoint}")
 
-    trainer.train(resume_from_checkpoint=resume_checkpoint)
+    train_result = trainer.train(resume_from_checkpoint=resume_checkpoint)
 
     # 训练结束后跑一次最终验证集评估。
     metrics = trainer.evaluate()
     print(metrics)
 
-    # 保存 LoRA adapter 和 tokenizer。
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(args.output_dir)
-    tokenizer.save_pretrained(args.output_dir)
+    # 只复制 checkpoint 中的 adapter，不再次序列化整个 Gemma 4 多模态基础模型。
+    copy_adapter_checkpoint(args.checkpoint_dir, args.output_dir, tokenizer)
 
     # 保存训练元数据，方便写论文和复现实验。
     save_training_metadata(args, args.output_dir, len(train_dataset), len(eval_dataset))
+    metadata_path = args.output_dir / "training_metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["train_metrics"] = train_result.metrics
+    metadata["eval_metrics"] = metrics
+    metadata_path.write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Saved LoRA adapter to {args.output_dir}")
 
 
@@ -696,6 +738,10 @@ def parse_args() -> argparse.Namespace:
     # 外部实验记录。默认 none，不上传到 wandb 等服务。
     parser.add_argument("--report-to", default="none")
     parser.add_argument("--run-name", default="lacan-lora")
+    parser.add_argument("--experiment-name", default="default")
+    parser.add_argument("--quantization-bits", type=int, choices=(4, 8), default=4)
+    parser.add_argument("--quantization-type", choices=("nf4", "fp4"), default="nf4")
+    parser.add_argument("--double-quant", action=argparse.BooleanOptionalAction, default=True)
     return parser.parse_args()
 
 
