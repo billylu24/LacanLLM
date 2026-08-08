@@ -99,6 +99,7 @@ def main() -> None:
             sys.executable,
             str(PROJECT_ROOT / "scripts" / "run_pipeline.py"),
             "--skip-prepare",
+            "--auto-resume",
             "--model-id",
             "google/gemma-4-E2B-it",
             "--raw-data-file",
@@ -155,7 +156,9 @@ def main() -> None:
             "adapter_dir": str(output_dir),
         }
         print(f"START {name}: 0 -> 1.5 epochs, every 0.25 epoch", flush=True)
-        metrics_path.unlink(missing_ok=True)
+        has_checkpoint = any(checkpoint_dir.glob("checkpoint-*/trainer_state.json"))
+        if not has_checkpoint:
+            metrics_path.unlink(missing_ok=True)
         with log_path.open("w", encoding="utf-8") as log:
             result = subprocess.run(command, cwd=PROJECT_ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, text=True)
         record.update({
