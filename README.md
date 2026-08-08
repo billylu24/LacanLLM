@@ -123,3 +123,15 @@ python scripts\evaluate.py `
 - 当前没有网页/API 部署。
 - 训练数据来自模型反向生成问题，不能宣称为人工标注问答。
 - 评估仍需加入独立人工标注集，以判断理论准确性、引用忠实度和幻觉率。
+
+## 连续 1.5 epoch 实验
+
+`scripts/run_experiments.py` 现在只启动两个连续实验：4-bit NF4 和 8-bit。每个实验都从基础模型的 0 epoch 开始，训练到 1.5 epoch，并在 0.25、0.5、0.75、1.0、1.25、1.5 epoch 保存 checkpoint、验证 loss 和记录文件。
+
+```powershell
+python scripts\run_experiments.py
+python scripts\summarize_experiments.py
+python scripts\plot_experiments.py
+```
+
+曲线数据保存在 `experiments\*_metrics.jsonl`，图表保存在 `experiments\quantization_epoch_comparison.png`。每个量化设置只加载一次基础模型；不同 epoch 点不是独立重启的实验。

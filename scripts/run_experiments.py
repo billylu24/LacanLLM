@@ -1,6 +1,12 @@
-"""Run a small Gemma 4 E2B quantization/epoch matrix and record every result."""
+"""Run continuous 1.5-epoch Gemma 4 E2B QLoRA experiments.
+
+Each quantization setting starts once from the base model. Evaluation and
+checkpointing happen every quarter epoch, so the recorded curve is cumulative
+within one run rather than a collection of independent restarts.
+"""
 
 import json
+import math
 import os
 import subprocess
 import sys
@@ -12,39 +18,73 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT_ROOT = PROJECT_ROOT / "experiments"
 LOG_ROOT = EXPERIMENT_ROOT / "logs"
 DATA_FILE = PROJECT_ROOT / "data" / "lacan_sft_pairs_checked.jsonl"
+TRAIN_FILE = PROJECT_ROOT / "data" / "gemma4_e2b_continuous_5000_train.jsonl"
+VALIDATION_FILE = PROJECT_ROOT / "data" / "gemma4_e2b_continuous_5000_validation.jsonl"
 
 EXPERIMENTS = [
-    {"name": "gemma4_e2b_4bit_nf4_025ep_5000", "bits": 4, "quant_type": "nf4", "epochs": 0.25, "target_count": 5000, "save_steps": 297},
-    {"name": "gemma4_e2b_4bit_nf4_050ep_5000", "bits": 4, "quant_type": "nf4", "epochs": 0.50, "target_count": 5000, "save_steps": 594},
-    {"name": "gemma4_e2b_4bit_nf4_075ep_5000", "bits": 4, "quant_type": "nf4", "epochs": 0.75, "target_count": 5000, "save_steps": 891},
-    {"name": "gemma4_e2b_4bit_nf4_100ep_5000", "bits": 4, "quant_type": "nf4", "epochs": 1.00, "target_count": 5000, "save_steps": 1188},
-    {"name": "gemma4_e2b_8bit_025ep_5000", "bits": 8, "quant_type": "nf4", "epochs": 0.25, "target_count": 5000, "save_steps": 297},
-    {"name": "gemma4_e2b_8bit_050ep_5000", "bits": 8, "quant_type": "nf4", "epochs": 0.50, "target_count": 5000, "save_steps": 594},
-    {"name": "gemma4_e2b_8bit_075ep_5000", "bits": 8, "quant_type": "nf4", "epochs": 0.75, "target_count": 5000, "save_steps": 891},
-    {"name": "gemma4_e2b_8bit_100ep_5000", "bits": 8, "quant_type": "nf4", "epochs": 1.00, "target_count": 5000, "save_steps": 1188},
+    {
+        "name": "gemma4_e2b_4bit_nf4_continuous_1p5ep_5000",
+        "bits": 4,
+        "quant_type": "nf4",
+    },
+    {
+        "name": "gemma4_e2b_8bit_continuous_1p5ep_5000",
+        "bits": 8,
+        "quant_type": "nf4",
+    },
 ]
+
+
+def run_prepare() -> None:
+    command = [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "run_pipeline.py"),
+        "--prepare-only",
+        "--model-id",
+        "google/gemma-4-E2B-it",
+        "--raw-data-file",
+        str(DATA_FILE),
+        "--training-file",
+        str(TRAIN_FILE),
+        "--validation-file",
+        str(VALIDATION_FILE),
+        "--target-count",
+        "5000",
+        "--max-seq-length",
+        "1024",
+    ]
+    subprocess.run(command, cwd=PROJECT_ROOT, check=True)
+
+
+def line_count(path: Path) -> int:
+    with path.open("r", encoding="utf-8") as input_file:
+        return sum(1 for _ in input_file)
 
 
 def main() -> None:
     if not DATA_FILE.exists():
         raise FileNotFoundError(DATA_FILE)
-    token = os.environ.get("HF_TOKEN") or os.environ.get("HF_TOKEN_USER")
-    if not token:
-        token = os.environ.get("HF_TOKEN")
+    token = os.environ.get("HF_TOKEN")
     if not token:
         raise RuntimeError("HF_TOKEN is not available in this process.")
+
+    run_prepare()
+    train_rows = line_count(TRAIN_FILE)
+    gradient_accumulation_steps = 4
+    steps_per_epoch = math.ceil(train_rows / gradient_accumulation_steps)
+    quarter_epoch_steps = max(1, round(steps_per_epoch * 0.25))
+
     env = os.environ.copy()
     env["HF_TOKEN"] = token
     LOG_ROOT.mkdir(parents=True, exist_ok=True)
-    manifest_path = EXPERIMENT_ROOT / "experiment_manifest_v2.jsonl"
+    manifest_path = EXPERIMENT_ROOT / "continuous_manifest.jsonl"
 
     for config in EXPERIMENTS:
         name = config["name"]
-        train_file = PROJECT_ROOT / "data" / f"{name}_train.jsonl"
-        val_file = PROJECT_ROOT / "data" / f"{name}_validation.jsonl"
         output_dir = PROJECT_ROOT / "adapters" / name
         checkpoint_dir = PROJECT_ROOT / "outputs" / name
         log_path = LOG_ROOT / f"{name}.log"
+        metrics_path = EXPERIMENT_ROOT / f"{name}_metrics.jsonl"
         metadata_path = output_dir / "training_metadata.json"
         if metadata_path.exists():
             try:
@@ -54,26 +94,49 @@ def main() -> None:
                     continue
             except (OSError, json.JSONDecodeError):
                 pass
+
         command = [
-            sys.executable, str(PROJECT_ROOT / "scripts" / "run_pipeline.py"),
-            "--model-id", "google/gemma-4-E2B-it",
-            "--raw-data-file", str(DATA_FILE),
-            "--training-file", str(train_file),
-            "--validation-file", str(val_file),
-            "--output-dir", str(output_dir),
-            "--checkpoint-dir", str(checkpoint_dir),
-            "--target-count", str(config["target_count"]),
-            "--max-seq-length", "1024",
-            "--num-train-epochs", str(config["epochs"]),
-            "--quantization-bits", str(config["bits"]),
-            "--quantization-type", str(config["quant_type"]),
-            "--experiment-name", name,
-            "--run-name", name,
-            "--gradient-accumulation-steps", "4",
-            "--logging-steps", "1",
-            "--eval-steps", "16",
-            "--save-steps", str(config["save_steps"]),
-            "--save-total-limit", "1",
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "run_pipeline.py"),
+            "--skip-prepare",
+            "--model-id",
+            "google/gemma-4-E2B-it",
+            "--raw-data-file",
+            str(DATA_FILE),
+            "--training-file",
+            str(TRAIN_FILE),
+            "--validation-file",
+            str(VALIDATION_FILE),
+            "--output-dir",
+            str(output_dir),
+            "--checkpoint-dir",
+            str(checkpoint_dir),
+            "--target-count",
+            "5000",
+            "--max-seq-length",
+            "1024",
+            "--num-train-epochs",
+            "1.5",
+            "--quantization-bits",
+            str(config["bits"]),
+            "--quantization-type",
+            str(config["quant_type"]),
+            "--experiment-name",
+            name,
+            "--run-name",
+            name,
+            "--gradient-accumulation-steps",
+            str(gradient_accumulation_steps),
+            "--logging-steps",
+            "1",
+            "--eval-steps",
+            str(quarter_epoch_steps),
+            "--save-steps",
+            str(quarter_epoch_steps),
+            "--save-total-limit",
+            "10",
+            "--metrics-file",
+            str(metrics_path),
         ]
         started = time.time()
         record = {
@@ -81,13 +144,18 @@ def main() -> None:
             "started_at": datetime.now(timezone.utc).isoformat(),
             "quantization_bits": config["bits"],
             "quantization_type": config["quant_type"] if config["bits"] == 4 else None,
-            "epochs": config["epochs"],
-            "target_count": config["target_count"],
-            "max_seq_length": 1024,
+            "epochs": 1.5,
+            "record_interval_epochs": 0.25,
+            "target_count": 5000,
+            "train_rows": train_rows,
+            "steps_per_epoch": steps_per_epoch,
+            "record_interval_steps": quarter_epoch_steps,
+            "metrics_file": str(metrics_path),
             "log_file": str(log_path),
             "adapter_dir": str(output_dir),
         }
-        print(f"START {name}", flush=True)
+        print(f"START {name}: 0 -> 1.5 epochs, every 0.25 epoch", flush=True)
+        metrics_path.unlink(missing_ok=True)
         with log_path.open("w", encoding="utf-8") as log:
             result = subprocess.run(command, cwd=PROJECT_ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, text=True)
         record.update({

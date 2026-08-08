@@ -48,6 +48,7 @@ from transformers import (
     BitsAndBytesConfig,
     DataCollatorForLanguageModeling,
     Trainer,
+    TrainerCallback,
     TrainingArguments,
 )
 
@@ -434,6 +435,30 @@ def copy_adapter_checkpoint(checkpoint_dir: Path, output_dir: Path, tokenizer) -
     tokenizer.save_pretrained(output_dir)
 
 
+class EvalMetricsRecorder(TrainerCallback):
+    """Persist every evaluation result, including its fractional epoch."""
+
+    def __init__(self, metrics_file: Path):
+        self.metrics_file = metrics_file
+        self.seen_steps: set[int] = set()
+        self.metrics_file.parent.mkdir(parents=True, exist_ok=True)
+
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+        metrics = metrics or {}
+        step = int(state.global_step)
+        if step in self.seen_steps:
+            return control
+        self.seen_steps.add(step)
+        record = {
+            "step": step,
+            "epoch": metrics.get("epoch", state.epoch),
+            **metrics,
+        }
+        with self.metrics_file.open("a", encoding="utf-8") as output_file:
+            output_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        return control
+
+
 def save_training_metadata(args: argparse.Namespace, output_dir: Path, train_count: int, validation_count: int) -> None:
     """
     保存训练元数据。
@@ -644,6 +669,7 @@ def train(args: argparse.Namespace) -> None:
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
+        callbacks=[EvalMetricsRecorder(args.metrics_file)] if args.metrics_file else None,
     )
 
     # 续训逻辑：
@@ -730,6 +756,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-steps", type=int, default=100)
     parser.add_argument("--save-steps", type=int, default=500)
     parser.add_argument("--save-total-limit", type=int, default=2)
+    parser.add_argument("--metrics-file", type=Path, default=None)
 
     # 断点续训。
     parser.add_argument("--auto-resume", action="store_true")
