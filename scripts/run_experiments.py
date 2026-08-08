@@ -73,6 +73,7 @@ def main() -> None:
     gradient_accumulation_steps = 4
     steps_per_epoch = math.ceil(train_rows / gradient_accumulation_steps)
     quarter_epoch_steps = max(1, round(steps_per_epoch * 0.25))
+    safety_checkpoint_steps = 50
 
     env = os.environ.copy()
     env["HF_TOKEN"] = token
@@ -133,7 +134,7 @@ def main() -> None:
             "--eval-steps",
             str(quarter_epoch_steps),
             "--save-steps",
-            str(quarter_epoch_steps),
+            str(safety_checkpoint_steps),
             "--save-total-limit",
             "10",
             "--metrics-file",
@@ -151,6 +152,7 @@ def main() -> None:
             "train_rows": train_rows,
             "steps_per_epoch": steps_per_epoch,
             "record_interval_steps": quarter_epoch_steps,
+            "safety_checkpoint_steps": safety_checkpoint_steps,
             "metrics_file": str(metrics_path),
             "log_file": str(log_path),
             "adapter_dir": str(output_dir),
