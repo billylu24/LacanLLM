@@ -408,7 +408,11 @@ def find_latest_checkpoint(checkpoint_dir: Path) -> str | None:
 
     if not checkpoint_dir.exists():
         return None
-    checkpoints = [path for path in checkpoint_dir.glob("checkpoint-*") if path.is_dir()]
+    checkpoints = [
+        path
+        for path in checkpoint_dir.glob("checkpoint-*")
+        if path.is_dir() and (path / "trainer_state.json").is_file()
+    ]
     if not checkpoints:
         return None
     return str(max(checkpoints, key=lambda path: int(path.name.split("-")[-1])))
