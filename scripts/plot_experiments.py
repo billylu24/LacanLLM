@@ -44,7 +44,7 @@ def main() -> None:
 
     plt.xlabel("Training epoch")
     plt.ylabel("Validation loss (lower is better)")
-    plt.title("Gemma 4 E2B QLoRA experiment comparison")
+    plt.title("Gemma 4 E2B training curves (historical and v2 are not directly comparable)")
     plt.grid(True, alpha=0.25)
     plt.legend(fontsize=8)
     plt.tight_layout()

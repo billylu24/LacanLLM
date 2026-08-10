@@ -48,10 +48,16 @@ data/*
 .env.*
 !.env.example
 !adapters/
+adapters/*
 !adapters/gemma4_e2b_4bit_nf4_continuous_1p5ep_5000/
 !adapters/gemma4_e2b_4bit_nf4_continuous_1p5ep_5000/*
 !adapters/gemma4_e2b_8bit_continuous_1p5ep_5000/
 !adapters/gemma4_e2b_8bit_continuous_1p5ep_5000/*
+!adapters/gemma4_e2b_4bit_nf4_v2_1ep_3000/
+adapters/gemma4_e2b_4bit_nf4_v2_1ep_3000/*
+!adapters/gemma4_e2b_4bit_nf4_v2_1ep_3000/README.md
+!adapters/gemma4_e2b_4bit_nf4_v2_1ep_3000/adapter_config.json
+!adapters/gemma4_e2b_4bit_nf4_v2_1ep_3000/training_metadata.json
 experiments/logs/
 experiments/runner*.log
 !experiments/continuous_manifest.jsonl

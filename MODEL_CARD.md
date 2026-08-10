@@ -20,9 +20,11 @@ LacanLLM is a research adapter for `google/gemma-4-E2B-it`, trained with PEFT/QL
 
 The historical adapters used 4,750 training rows, 250 validation rows, seed 3407, maximum sequence length 1024, LoRA rank 16, alpha 32, and 1.5 epochs on an RTX 5070. See each adapter's `training_metadata.json` for recorded details.
 
+The v2 4-bit NF4 adapter used 2,700 training rows, 300 validation rows, one epoch, assistant-only loss, and the same seed and LoRA settings. It completed 675 optimizer steps in 1,998 seconds of Trainer runtime. The final adapter SHA-256 is recorded in its training metadata.
+
 ## Evaluation status
 
-Historical validation loss is reported for reproducibility, but the historical split contained 25 exact answer overlaps. The v2 pipeline fixes exact leakage and assistant-only masking; v2 adapters have not yet been trained in this repository snapshot.
+Historical validation loss is reported for reproducibility, but the historical split contained 25 exact answer overlaps. The completed v2 run has zero exact cross-split instruction/output overlaps and reached validation loss 3.3556. Historical and v2 losses are not directly comparable because both the data split and label masking changed.
 
 Before claiming model improvement, compare the base model and each adapter on the same leakage-free benchmark and complete a blinded domain review for theoretical accuracy, relevance, hallucination, and source faithfulness.
 
@@ -37,4 +39,3 @@ Before claiming model improvement, compare the base model and each adapter on th
 ## Licenses
 
 Repository code is MIT licensed. The base model, source texts, dataset, and adapter may have separate restrictions; consult their original licenses before use or redistribution.
-

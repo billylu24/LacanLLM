@@ -37,8 +37,16 @@ flowchart LR
 
 在这台机器上，4-bit 的 eval loss 仅高约 **0.14%**，训练时间约为 8-bit 的 **1/5**。
 
+当前泄漏门禁与 assistant-only loss 均已启用的 v2 实验：
+
+| v2 实验 | 数据拆分 | Epoch | Eval loss | 训练时间 | 最终 step |
+|---|---:|---:|---:|---:|---:|
+| 4-bit NF4 | 2,700 / 300 | 1.0 | 3.3556 | 33.3 min | 675 |
+
+v2 的验证 loss 从 0.25 epoch 的 3.4667 持续下降到 1 epoch 的 3.3556。由于 v2 更换了数据拆分并只计算 assistant token loss，**它的 loss 不能与历史实验直接横向比较**；模型效果仍需同一测试集上的 base-vs-adapter 生成评估。
+
 > [!IMPORTANT]
-> 历史数据缺少 `source_file`，并存在 25 条 train/validation 重复答案。因此这些结果适合展示工程过程和初步趋势，**不能作为最终模型效果结论**。`v2` 流程已修复去重、泄漏门禁和 assistant-only loss；重新训练时会使用新文件名，不覆盖历史产物。
+> 历史数据缺少 `source_file`，并存在 25 条 train/validation 重复答案。因此这些结果适合展示工程过程和初步趋势，**不能作为最终模型效果结论**。`v2` 流程已修复精确去重、泄漏门禁和 assistant-only loss，但由于来源字段仍缺失，目前只能使用 seeded row split，不能排除语义或同源泄漏。
 
 ## 5 分钟运行工程检查
 
@@ -137,8 +145,8 @@ LacanLLM/
 
 1. **问题**：在 12GB 消费级 GPU 上做拉康领域适配，并保证长时间训练可恢复；
 2. **设计**：用 QLoRA、assistant-only loss、确定性数据管道和配置驱动实验；
-3. **证据**：完成 4/8-bit 消融，4-bit 在本机接近 8-bit loss，但快约 5.1 倍；
-4. **限制**：发现历史 split 泄漏后增加自动审计，新版结果必须经过 base baseline 和人工盲评。
+3. **证据**：v2 在 675 steps 内将 held-out loss 从 3.4667 降至 3.3556，并保存数据/adapter 哈希；
+4. **限制**：发现历史 split 泄漏后增加自动审计，模型能力结论仍需 base baseline 和人工盲评。
 
 主动解释限制通常比只报一个 loss 更能体现工程判断力。
 
@@ -154,4 +162,4 @@ LacanLLM/
 
 LacanLLM is a reproducible domain-adaptation project for Gemma 4 E2B. It covers text cleaning, synthetic SFT generation, deterministic deduplication and split auditing, 4/8-bit QLoRA, resumable training, metadata capture, and baseline-aware evaluation. The repository separates testable core modules under `src/lacanllm` from human-facing CLI orchestration under `scripts`.
 
-Historical adapters are included for reproducibility, but their split contained 25 duplicated answers across train and validation. The v2 pipeline fails fast on such leakage and masks user-prompt labels so loss is computed only on assistant tokens. New experiments therefore use distinct v2 artifact names and should be evaluated independently.
+Historical adapters are included for reproducibility, but their split contained 25 duplicated answers across train and validation. The completed 3,000-example v2 run reports zero exact cross-split instruction/output overlap, masks user-prompt labels, and reached validation loss 3.3556 after 675 steps. Because provenance remains missing, the split falls back to deterministic row-level isolation and still requires an independent base-vs-adapter evaluation.
