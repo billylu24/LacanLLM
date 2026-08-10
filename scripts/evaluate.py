@@ -3,11 +3,13 @@
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 import torch
 from peft import PeftModel
-from transformers import AutoModelForMultimodalLM, AutoProcessor
+from tqdm import tqdm
+from transformers import AutoModelForMultimodalLM, AutoProcessor, BitsAndBytesConfig
 
 from lacanllm.evaluation import reference_overlap
 
@@ -24,7 +26,15 @@ def main() -> None:
     parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
     parser.add_argument("--run-name", default="evaluation")
     parser.add_argument("--limit", type=int, default=50)
+    parser.add_argument("--max-new-tokens", type=int, default=256)
+    parser.add_argument(
+        "--load-in-4bit",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Use the same memory-efficient 4-bit base for both baseline and adapter evaluation.",
+    )
     parser.add_argument("--output-file", type=Path, default=PROJECT_ROOT / "outputs" / "evaluation.jsonl")
+    parser.add_argument("--summary-file", type=Path, default=None)
     args = parser.parse_args()
     token = os.environ.get("HF_TOKEN")
     if not token:
@@ -40,15 +50,36 @@ def main() -> None:
             row = json.loads(line)
             rows.append(row)
     processor = AutoProcessor.from_pretrained(args.model_id, token=token)
-    model = AutoModelForMultimodalLM.from_pretrained(args.model_id, token=token, torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16, device_map="auto", attn_implementation="sdpa")
+    quantization_config = None
+    if args.load_in_4bit:
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+    model = AutoModelForMultimodalLM.from_pretrained(
+        args.model_id,
+        token=token,
+        torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+        device_map="auto",
+        quantization_config=quantization_config,
+        attn_implementation="sdpa",
+    )
     if args.adapter_dir:
         model = PeftModel.from_pretrained(model, args.adapter_dir)
     model.eval()
     results = []
-    for row in rows:
+    started = time.perf_counter()
+    for row in tqdm(rows, desc=f"Evaluating {args.run_name}", unit="example"):
         inputs = processor.apply_chat_template([{"role": "user", "content": row["instruction"]}], tokenize=True, return_dict=True, return_tensors="pt", add_generation_prompt=True, enable_thinking=False).to(model.device)
         with torch.no_grad():
-            output = model.generate(**inputs, max_new_tokens=512, do_sample=False, pad_token_id=processor.tokenizer.eos_token_id)
+            output = model.generate(
+                **inputs,
+                max_new_tokens=args.max_new_tokens,
+                do_sample=False,
+                pad_token_id=processor.tokenizer.eos_token_id,
+            )
         answer = processor.decode(output[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True).strip()
         diagnostics = reference_overlap(answer, row["output"])
         results.append(
@@ -73,10 +104,16 @@ def main() -> None:
         "model_id": args.model_id,
         "adapter_dir": str(args.adapter_dir) if args.adapter_dir else None,
         "examples": len(results),
+        "load_in_4bit": args.load_in_4bit,
+        "max_new_tokens": args.max_new_tokens,
+        "runtime_seconds": round(time.perf_counter() - started, 2),
         **means,
         "output_file": str(args.output_file),
         "warning": "Lexical overlap is diagnostic only; use domain-expert evaluation for correctness.",
     }
+    if args.summary_file:
+        args.summary_file.parent.mkdir(parents=True, exist_ok=True)
+        args.summary_file.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False))
 
 
