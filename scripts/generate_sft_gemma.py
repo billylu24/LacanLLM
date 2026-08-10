@@ -29,7 +29,6 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForMultimodalLM, AutoProcessor
 
-
 # 项目根目录。使用绝对路径可以避免“从不同目录运行脚本导致找不到文件”的问题。
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 

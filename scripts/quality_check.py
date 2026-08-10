@@ -6,6 +6,8 @@ import re
 from collections import Counter
 from pathlib import Path
 
+from lacanllm.data import normalize_for_comparison
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = PROJECT_ROOT / "data" / "lacan_sft_pairs_raw.jsonl"
 DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "lacan_sft_pairs.jsonl"
@@ -88,6 +90,7 @@ def main() -> None:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     sample = kept[: min(args.sample_size, len(kept))]
+    unique_outputs = {normalize_for_comparison(row["output"]) for row in kept}
     report = {
         "input_file": str(args.input_file),
         "output_file": str(args.output_file),
@@ -95,6 +98,10 @@ def main() -> None:
         "kept_rows": len(kept),
         "rejected_rows": sum(rejected.values()),
         "rejection_reasons": dict(rejected),
+        "missing_source_file": sum(not row.get("source_file") for row in kept),
+        "missing_paragraph_index": sum(row.get("paragraph_index") is None for row in kept),
+        "unique_outputs": len(unique_outputs),
+        "duplicate_outputs": len(kept) - len(unique_outputs),
         "sample_size": len(sample),
         "sample_question_chars": [len(row["instruction"]) for row in sample],
         "sample_answer_chars": [len(row["output"]) for row in sample],

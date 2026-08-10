@@ -1,0 +1,17 @@
+{
+  "train_rows": 2700,
+  "validation_rows": 300,
+  "train_sources": 0,
+  "validation_sources": 0,
+  "missing_train_sources": 2700,
+  "missing_validation_sources": 300,
+  "shared_sources": 0,
+  "shared_instructions": 0,
+  "shared_outputs": 0,
+  "split_strategy": "seeded_row_fallback",
+  "leakage_free": true,
+  "selected_rows": 3000,
+  "duplicate_outputs_removed": 5280,
+  "seed": 3407,
+  "validation_ratio": 0.1
+}

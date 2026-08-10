@@ -11,6 +11,10 @@
     "invalid_question": 26,
     "duplicate": 229
   },
+  "missing_source_file": 46839,
+  "missing_paragraph_index": 46839,
+  "unique_outputs": 41555,
+  "duplicate_outputs": 5284,
   "sample_size": 300,
   "sample_question_chars": [
     111,

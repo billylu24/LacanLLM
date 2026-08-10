@@ -29,10 +29,12 @@ run_pipeline.py
 """
 
 import argparse
+import importlib.metadata
 import json
 import os
-import random
-import shutil
+import platform
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -46,12 +48,23 @@ from transformers import (
     AutoProcessor,
     AutoTokenizer,
     BitsAndBytesConfig,
-    DataCollatorForLanguageModeling,
+    DataCollatorForSeq2Seq,
     Trainer,
     TrainerCallback,
     TrainingArguments,
 )
 
+from lacanllm.data import (
+    assert_no_content_leakage,
+    audit_split,
+    deduplicate_by_output,
+    file_sha256,
+    read_jsonl,
+    split_rows,
+    write_audit,
+    write_jsonl,
+)
+from lacanllm.training import assistant_only_labels
 
 # 项目根目录，保证路径不依赖当前 shell 所在目录。
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +75,7 @@ RAW_DATA_FILE = PROJECT_ROOT / "data" / "lacan_sft_pairs.jsonl"
 # 本脚本准备出来的训练集和验证集。
 TRAINING_DATA_FILE = PROJECT_ROOT / "data" / "lacan_training_data.jsonl"
 VALIDATION_DATA_FILE = PROJECT_ROOT / "data" / "lacan_validation_data.jsonl"
+SPLIT_AUDIT_FILE = PROJECT_ROOT / "data" / "split_audit.json"
 
 # 最终 LoRA adapter 保存目录。
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "adapters" / "lacan_lora"
@@ -152,39 +166,6 @@ def require_hf_token() -> str:
     return token
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    """
-    读取 JSONL 文件。
-
-    JSONL 格式：
-        每一行都是一个独立 JSON 对象。
-
-    返回:
-        list[dict]: 所有能成功解析的行。
-    """
-
-    rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as input_file:
-        for line in input_file:
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError:
-                # 遇到坏行直接跳过，避免整个训练准备中断。
-                continue
-    return rows
-
-
-def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
-    """
-    写 JSONL 文件。
-    """
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as output_file:
-        for row in rows:
-            output_file.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-
 def row_quality_score(entry: dict[str, Any], preferred_output_chars: int) -> int:
     """
     给一个训练样本打粗略质量分。
@@ -227,6 +208,7 @@ def prepare_training_data(
     min_output_chars: int,
     max_output_chars: int,
     preferred_output_chars: int,
+    split_audit_file: Path | None = None,
 ) -> None:
     """
     从原始 SFT pairs 准备 train/validation 数据。
@@ -265,40 +247,36 @@ def prepare_training_data(
     if not rows:
         raise RuntimeError("No usable SFT rows found after filtering.")
 
-    # 先按质量分从高到低排序，再截取 target_count 条。
+    # 先按质量分排序。相同回答只保留质量最高的一条，避免模型重复学习，
+    # 更重要的是避免同一段答案同时进入 train 和 validation。
     rows.sort(key=lambda item: item["_score"], reverse=True)
-    selected = rows[:target_count]
-
-    rng = random.Random(seed)
-
-    # 优先按 source_file 拆验证集。
-    # 这样同一个源文件的段落不会同时大量出现在 train 和 validation，
-    # 可以减少数据泄漏，让 validation 更可信。
-    source_files = sorted({row.get("source_file") for row in selected if row.get("source_file")})
-    validation_sources = set(rng.sample(source_files, max(1, round(len(source_files) * val_ratio)))) if source_files else set()
-
-    train_rows = []
-    validation_rows = []
+    unique_rows, duplicate_outputs_removed = deduplicate_by_output(rows)
+    selected = unique_rows[:target_count]
     for row in selected:
         row.pop("_score", None)
-        if row.get("source_file") in validation_sources:
-            validation_rows.append(row)
-        else:
-            train_rows.append(row)
 
-    # 如果没有 source_file，或者 validation 为空，就退回到普通随机拆分。
-    if not validation_rows:
-        rng.shuffle(selected)
-        split_at = max(1, round(len(selected) * val_ratio))
-        validation_rows = selected[:split_at]
-        train_rows = selected[split_at:]
-
-    # 打乱顺序，避免训练时先看到同一类样本。
-    rng.shuffle(train_rows)
-    rng.shuffle(validation_rows)
+    train_rows, validation_rows, split_strategy = split_rows(
+        selected,
+        validation_ratio=val_ratio,
+        seed=seed,
+    )
+    audit = audit_split(train_rows, validation_rows, split_strategy=split_strategy)
+    assert_no_content_leakage(audit)
 
     write_jsonl(train_file, train_rows)
     write_jsonl(validation_file, validation_rows)
+    if split_audit_file:
+        write_audit(
+            split_audit_file,
+            audit,
+            selected_rows=len(selected),
+            duplicate_outputs_removed=duplicate_outputs_removed,
+            seed=seed,
+            validation_ratio=val_ratio,
+        )
+        print(f"Split audit: {split_audit_file}")
+    if split_strategy == "seeded_row_fallback":
+        print("WARNING: source_file is missing or unusable; used a seeded row split.")
     print_data_summary(train_rows, validation_rows, train_file, validation_file)
 
 
@@ -372,6 +350,17 @@ def apply_chat_template(processor, tokenizer, instruction: str, output: str) -> 
         return tokenizer.apply_chat_template(messages, **template_kwargs)
 
 
+def apply_prompt_template(processor, tokenizer, instruction: str) -> str:
+    """Render the user turn plus assistant header, without the answer."""
+
+    messages = [{"role": "user", "content": instruction}]
+    template_kwargs = {"tokenize": False, "add_generation_prompt": True}
+    try:
+        return processor.apply_chat_template(messages, enable_thinking=False, **template_kwargs)
+    except TypeError:
+        return tokenizer.apply_chat_template(messages, **template_kwargs)
+
+
 def tokenize_dataset(dataset: Dataset, processor, tokenizer, max_seq_length: int) -> Dataset:
     """
     把字符串数据集转成 token id 数据集。
@@ -380,9 +369,10 @@ def tokenize_dataset(dataset: Dataset, processor, tokenizer, max_seq_length: int
     """
 
     def format_and_tokenize(example):
-        text = apply_chat_template(processor, tokenizer, example["instruction"], example["output"])
-        return tokenizer(
-            text,
+        full_text = apply_chat_template(processor, tokenizer, example["instruction"], example["output"])
+        prompt_text = apply_prompt_template(processor, tokenizer, example["instruction"])
+        encoded = tokenizer(
+            full_text,
 
             # 超过 max_seq_length 的样本会被截断。
             truncation=True,
@@ -391,6 +381,14 @@ def tokenize_dataset(dataset: Dataset, processor, tokenizer, max_seq_length: int
             # 不在这里 padding，让 data_collator 在 batch 级别动态 padding。
             padding=False,
         )
+        prompt = tokenizer(
+            prompt_text,
+            truncation=True,
+            max_length=max_seq_length,
+            padding=False,
+        )
+        encoded["labels"] = assistant_only_labels(encoded["input_ids"], prompt["input_ids"])
+        return encoded
 
     return dataset.map(format_and_tokenize, remove_columns=dataset.column_names)
 
@@ -416,27 +414,6 @@ def find_latest_checkpoint(checkpoint_dir: Path) -> str | None:
     if not checkpoints:
         return None
     return str(max(checkpoints, key=lambda path: int(path.name.split("-")[-1])))
-
-
-def copy_adapter_checkpoint(checkpoint_dir: Path, output_dir: Path, tokenizer) -> None:
-    """Copy only PEFT adapter/tokenizer artifacts; never serialize the 5B base model again."""
-
-    checkpoint = find_latest_checkpoint(checkpoint_dir)
-    if not checkpoint:
-        raise FileNotFoundError(f"No Trainer checkpoint found in {checkpoint_dir}")
-    source_dir = Path(checkpoint)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    required = ("adapter_config.json", "adapter_model.safetensors")
-    for name in required:
-        source = source_dir / name
-        if not source.exists():
-            raise FileNotFoundError(source)
-        shutil.copy2(source, output_dir / name)
-    for name in ("README.md", "chat_template.jinja", "tokenizer.json", "tokenizer_config.json", "special_tokens_map.json"):
-        source = source_dir / name
-        if source.exists():
-            shutil.copy2(source, output_dir / name)
-    tokenizer.save_pretrained(output_dir)
 
 
 class EvalMetricsRecorder(TrainerCallback):
@@ -475,8 +452,27 @@ def save_training_metadata(args: argparse.Namespace, output_dir: Path, train_cou
     - CUDA/GPU 环境是什么
     """
 
+    try:
+        git_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        git_commit = None
+
+    dependency_versions = {}
+    for package in ("accelerate", "bitsandbytes", "datasets", "peft", "transformers"):
+        try:
+            dependency_versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            dependency_versions[package] = None
+
     metadata = {
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "git_commit": git_commit,
         "experiment_name": args.experiment_name,
         "model_id": args.model_id,
         "quantization_bits": args.quantization_bits,
@@ -496,6 +492,13 @@ def save_training_metadata(args: argparse.Namespace, output_dir: Path, train_cou
         "cuda_available": torch.cuda.is_available(),
         "cuda_runtime": torch.version.cuda,
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "python_version": sys.version.split()[0],
+        "platform": platform.platform(),
+        "dependency_versions": dependency_versions,
+        "training_file": args.training_file.name,
+        "training_file_sha256": file_sha256(args.training_file),
+        "validation_file": args.validation_file.name,
+        "validation_file_sha256": file_sha256(args.validation_file),
     }
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -663,9 +666,14 @@ def train(args: argparse.Namespace) -> None:
         remove_unused_columns=False,
     )
 
-    # Causal LM 训练用的数据整理器。
-    # 它会把 batch 里的样本 padding 到同一长度，并创建 labels。
-    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+    # 保留上面创建的 assistant-only labels，并把 padding label 设为 -100。
+    # 这样 loss 不会训练 user prompt，也不会训练 padding token。
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer=tokenizer,
+        padding=True,
+        label_pad_token_id=-100,
+        return_tensors="pt",
+    )
 
     trainer = Trainer(
         model=model,
@@ -691,13 +699,19 @@ def train(args: argparse.Namespace) -> None:
     metrics = trainer.evaluate()
     print(metrics)
 
-    # 只复制 checkpoint 中的 adapter，不再次序列化整个 Gemma 4 多模态基础模型。
-    copy_adapter_checkpoint(args.checkpoint_dir, args.output_dir, tokenizer)
+    # 直接保存训练结束时内存中的 PEFT adapter。不要从“最近一次定期 checkpoint”
+    # 复制，否则当最终 step 不是 save_steps 的整数倍时，adapter 与最终指标会错位。
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(args.output_dir, safe_serialization=True)
+    tokenizer.save_pretrained(args.output_dir)
 
     # 保存训练元数据，方便写论文和复现实验。
     save_training_metadata(args, args.output_dir, len(train_dataset), len(eval_dataset))
     metadata_path = args.output_dir / "training_metadata.json"
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    adapter_path = args.output_dir / "adapter_model.safetensors"
+    metadata["final_global_step"] = int(trainer.state.global_step)
+    metadata["adapter_sha256"] = file_sha256(adapter_path)
     metadata["train_metrics"] = train_result.metrics
     metadata["eval_metrics"] = metrics
     metadata_path.write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -719,6 +733,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--raw-data-file", type=Path, default=RAW_DATA_FILE)
     parser.add_argument("--training-file", type=Path, default=TRAINING_DATA_FILE)
     parser.add_argument("--validation-file", type=Path, default=VALIDATION_DATA_FILE)
+    parser.add_argument("--split-audit-file", type=Path, default=SPLIT_AUDIT_FILE)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--checkpoint-dir", type=Path, default=DEFAULT_CHECKPOINT_DIR)
 
@@ -801,6 +816,7 @@ def main() -> None:
             min_output_chars=args.min_output_chars,
             max_output_chars=args.max_output_chars,
             preferred_output_chars=args.preferred_output_chars,
+            split_audit_file=args.split_audit_file,
         )
 
     if not args.prepare_only:

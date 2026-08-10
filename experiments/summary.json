@@ -12,8 +12,8 @@
       "eval_loss": 3.0237996578216553,
       "train_runtime_seconds": 4560.6441,
       "gpu": "NVIDIA GeForce RTX 5070",
-      "adapter_dir": "C:\\Users\\billy\\Desktop\\LacanLLM\\adapters\\gemma4_e2b_4bit_nf4_continuous_1p5ep_5000",
-      "metrics_file": "C:\\Users\\billy\\Desktop\\LacanLLM\\experiments\\gemma4_e2b_4bit_nf4_continuous_1p5ep_5000_metrics.jsonl",
+      "adapter_dir": "adapters/gemma4_e2b_4bit_nf4_continuous_1p5ep_5000",
+      "metrics_file": "experiments/gemma4_e2b_4bit_nf4_continuous_1p5ep_5000_metrics.jsonl",
       "quarter_epoch_metrics": [
         {
           "step": 297,
@@ -77,8 +77,8 @@
       "eval_loss": 3.0196762084960938,
       "train_runtime_seconds": 23150.4071,
       "gpu": "NVIDIA GeForce RTX 5070",
-      "adapter_dir": "C:\\Users\\billy\\Desktop\\LacanLLM\\adapters\\gemma4_e2b_8bit_continuous_1p5ep_5000",
-      "metrics_file": "C:\\Users\\billy\\Desktop\\LacanLLM\\experiments\\gemma4_e2b_8bit_continuous_1p5ep_5000_metrics.jsonl",
+      "adapter_dir": "adapters/gemma4_e2b_8bit_continuous_1p5ep_5000",
+      "metrics_file": "experiments/gemma4_e2b_8bit_continuous_1p5ep_5000_metrics.jsonl",
       "quarter_epoch_metrics": [
         {
           "step": 297,
@@ -143,8 +143,8 @@
     "eval_loss": 3.0196762084960938,
     "train_runtime_seconds": 23150.4071,
     "gpu": "NVIDIA GeForce RTX 5070",
-    "adapter_dir": "C:\\Users\\billy\\Desktop\\LacanLLM\\adapters\\gemma4_e2b_8bit_continuous_1p5ep_5000",
-    "metrics_file": "C:\\Users\\billy\\Desktop\\LacanLLM\\experiments\\gemma4_e2b_8bit_continuous_1p5ep_5000_metrics.jsonl",
+    "adapter_dir": "adapters/gemma4_e2b_8bit_continuous_1p5ep_5000",
+    "metrics_file": "experiments/gemma4_e2b_8bit_continuous_1p5ep_5000_metrics.jsonl",
     "quarter_epoch_metrics": [
       {
         "step": 297,

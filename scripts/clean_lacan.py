@@ -17,7 +17,6 @@ import json
 import re
 from pathlib import Path
 
-
 # Path(__file__) 是当前脚本文件 scripts/clean_lacan.py 的路径。
 # .resolve() 会把它变成绝对路径。
 # .parents[1] 表示向上走两级：

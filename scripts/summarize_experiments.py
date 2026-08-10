@@ -9,7 +9,7 @@ OUTPUT = PROJECT_ROOT / "experiments" / "summary.json"
 
 def main() -> None:
     rows = []
-    for metadata_path in sorted((PROJECT_ROOT / "adapters").glob("gemma4_e2b_*continuous*/training_metadata.json")):
+    for metadata_path in sorted((PROJECT_ROOT / "adapters").glob("gemma4_e2b_*/training_metadata.json")):
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         metrics_path = PROJECT_ROOT / "experiments" / f"{metadata_path.parent.name}_metrics.jsonl"
         curve = []
@@ -27,8 +27,8 @@ def main() -> None:
             "eval_loss": metadata.get("eval_metrics", {}).get("eval_loss"),
             "train_runtime_seconds": metadata.get("train_metrics", {}).get("train_runtime"),
             "gpu": metadata.get("gpu"),
-            "adapter_dir": str(metadata_path.parent),
-            "metrics_file": str(metrics_path),
+            "adapter_dir": metadata_path.parent.relative_to(PROJECT_ROOT).as_posix(),
+            "metrics_file": metrics_path.relative_to(PROJECT_ROOT).as_posix(),
             "quarter_epoch_metrics": curve,
         })
     summary = {"experiments": rows, "best_by_eval_loss": min(rows, key=lambda row: row["eval_loss"] or float("inf")) if rows else None}

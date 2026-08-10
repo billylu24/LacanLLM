@@ -10,6 +10,9 @@ node_modules/
 env/
 .vscode/
 .ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
 .git/
 *.DS_Store
 *.pyc
@@ -33,12 +36,14 @@ unsloth_compiled_cache/
 !README.txt
 !ENVIRONMENT_SETUP_LOG.txt
 !requirements.txt
+!requirements-dev.txt
 !data/
 data/*
 !data/lacan_sft_pairs_checked.jsonl
 !data/quality_report.json
 !data/gemma4_e2b_continuous_5000_train.jsonl
 !data/gemma4_e2b_continuous_5000_validation.jsonl
+!data/gemma4_e2b_v2_3000_split_audit.json
 .env
 .env.*
 !.env.example
