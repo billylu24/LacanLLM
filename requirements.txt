@@ -1,10 +1,4 @@
-accelerate
-bitsandbytes
-datasets
-huggingface-hub
-numpy
-peft
-sentencepiece
-tqdm
-transformers
-matplotlib
+# Runtime dependencies are declared once in pyproject.toml.
+# This editable install keeps the familiar beginner setup command working:
+#   python -m pip install -r requirements.txt
+-e .

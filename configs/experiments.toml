@@ -1,0 +1,26 @@
+# One readable source of truth for the training matrix.
+[run]
+model_id = "google/gemma-4-E2B-it"
+data_file = "data/lacan_sft_pairs_checked.jsonl"
+train_file = "data/gemma4_e2b_v2_3000_train.jsonl"
+validation_file = "data/gemma4_e2b_v2_3000_validation.jsonl"
+split_audit_file = "data/gemma4_e2b_v2_3000_split_audit.json"
+experiment_root = "experiments"
+adapter_root = "adapters"
+checkpoint_root = "outputs"
+target_count = 3000
+validation_ratio = 0.10
+seed = 3407
+max_seq_length = 1024
+epochs = 1.0
+per_device_train_batch_size = 1
+gradient_accumulation_steps = 4
+evaluation_interval_epochs = 0.25
+checkpoint_steps = 50
+save_total_limit = 10
+logging_steps = 1
+
+[[experiments]]
+name = "gemma4_e2b_4bit_nf4_v2_1ep_3000"
+bits = 4
+quantization_type = "nf4"

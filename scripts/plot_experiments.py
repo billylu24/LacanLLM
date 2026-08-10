@@ -1,44 +1,56 @@
-"""Plot the cumulative eval-loss curves for the continuous runs."""
+"""Plot every available Gemma experiment curve from metrics JSONL files."""
 
+from __future__ import annotations
+
+import argparse
 import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = PROJECT_ROOT / "experiments" / "quantization_epoch_comparison.png"
+EXPERIMENT_ROOT = PROJECT_ROOT / "experiments"
+
+
+def readable_label(metrics_path: Path) -> str:
+    name = metrics_path.stem.removesuffix("_metrics")
+    return name.replace("gemma4_e2b_", "").replace("_", " ")
 
 
 def main() -> None:
-    groups = {
-        "4-bit NF4": PROJECT_ROOT / "experiments" / "gemma4_e2b_4bit_nf4_continuous_1p5ep_5000_metrics.jsonl",
-        "8-bit": PROJECT_ROOT / "experiments" / "gemma4_e2b_8bit_continuous_1p5ep_5000_metrics.jsonl",
-    }
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=EXPERIMENT_ROOT / "quantization_epoch_comparison.png",
+    )
+    args = parser.parse_args()
 
-    plt.figure(figsize=(9, 5.5))
-    for label, metrics_path in groups.items():
+    metrics_files = sorted(EXPERIMENT_ROOT.glob("gemma4_e2b_*_metrics.jsonl"))
+    if not metrics_files:
+        raise FileNotFoundError(f"No metrics JSONL files found in {EXPERIMENT_ROOT}")
+
+    plt.figure(figsize=(10, 6))
+    for metrics_path in metrics_files:
         points = []
-        if metrics_path.exists():
-            for line in metrics_path.read_text(encoding="utf-8").splitlines():
-                row = json.loads(line)
-                if row.get("epoch") is not None and row.get("eval_loss") is not None:
-                    points.append((float(row["epoch"]), float(row["eval_loss"])))
+        for line in metrics_path.read_text(encoding="utf-8").splitlines():
+            row = json.loads(line)
+            if row.get("epoch") is not None and row.get("eval_loss") is not None:
+                points.append((float(row["epoch"]), float(row["eval_loss"])))
         points.sort()
         if points:
-            xs, ys = zip(*points)
-            plt.plot(xs, ys, marker="o", linewidth=2, label=label)
-            for x, y in points:
-                plt.annotate(f"{y:.3f}", (x, y), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8)
+            epochs, losses = zip(*points)
+            plt.plot(epochs, losses, marker="o", linewidth=2, label=readable_label(metrics_path))
+
     plt.xlabel("Training epoch")
     plt.ylabel("Validation loss (lower is better)")
-    plt.title("Gemma 4 E2B: continuous 1.5-epoch comparison (5,000 samples)")
-    plt.xticks([0.25, 0.5, 0.75, 1.0, 1.25, 1.5])
+    plt.title("Gemma 4 E2B training curves (historical and v2 are not directly comparable)")
     plt.grid(True, alpha=0.25)
-    plt.legend()
+    plt.legend(fontsize=8)
     plt.tight_layout()
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(OUTPUT, dpi=180)
-    print(OUTPUT)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(args.output, dpi=180)
+    print(args.output)
 
 
 if __name__ == "__main__":

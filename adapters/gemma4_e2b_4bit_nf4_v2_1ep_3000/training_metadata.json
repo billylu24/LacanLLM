@@ -1,0 +1,53 @@
+{
+  "created_at": "2026-08-10T05:51:53.095171+00:00",
+  "git_commit": "b637328ba85b5f8a5dfb01230a46df3fa85fda72",
+  "experiment_name": "gemma4_e2b_4bit_nf4_v2_1ep_3000",
+  "model_id": "google/gemma-4-E2B-it",
+  "quantization_bits": 4,
+  "quantization_type": "nf4",
+  "double_quant": true,
+  "max_seq_length": 1024,
+  "train_rows": 2700,
+  "validation_rows": 300,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "learning_rate": 0.0002,
+  "num_train_epochs": 1.0,
+  "per_device_train_batch_size": 1,
+  "gradient_accumulation_steps": 4,
+  "torch_version": "2.11.0+cu130",
+  "cuda_available": true,
+  "cuda_runtime": "13.0",
+  "gpu": "NVIDIA GeForce RTX 5070",
+  "python_version": "3.11.5",
+  "platform": "Windows-10-10.0.22631-SP0",
+  "dependency_versions": {
+    "accelerate": "1.13.0",
+    "bitsandbytes": "0.49.2",
+    "datasets": "4.8.5",
+    "peft": "0.19.1",
+    "transformers": "5.7.0"
+  },
+  "training_file": "gemma4_e2b_v2_3000_train.jsonl",
+  "training_file_sha256": "2c01e9bee70cf6f058d79b5b0e0f215816838219c8dd89efb936a24cad5219de",
+  "validation_file": "gemma4_e2b_v2_3000_validation.jsonl",
+  "validation_file_sha256": "adfa19e9c75aec8857e3db2f968300d639c2a83ff3a214611c54062e340a9548",
+  "final_global_step": 675,
+  "adapter_sha256": "4bde8d1641edf35ae0fecff27abb0cb3e5e61b00973ba321c92c98393e022b3b",
+  "train_metrics": {
+    "train_runtime": 1998.0255,
+    "train_samples_per_second": 1.351,
+    "train_steps_per_second": 0.338,
+    "total_flos": 1.071372226001088e+16,
+    "train_loss": 3.45764480944033,
+    "epoch": 1.0
+  },
+  "eval_metrics": {
+    "eval_loss": 3.355586051940918,
+    "eval_runtime": 58.7665,
+    "eval_samples_per_second": 5.105,
+    "eval_steps_per_second": 5.105,
+    "epoch": 1.0
+  }
+}
