@@ -1,55 +1,21 @@
-# Auto-generated .gitignore
-# -----------------------------
-
-# [System & Environments]
 __pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
 .idea/
-venv/
-.venv/
-node_modules/
-env/
 .vscode/
-.ipynb_checkpoints/
-.git/
-*.DS_Store
-*.pyc
+.venv/
+dist/
+build/
+*.egg-info/
 
-# [Data & Copyrighted Material]
-*.txt
-*.jsonl
-*.pdf
-data/
+# Rebuildable intermediate artifacts.
+data/interim/
+data/reports/rejections.jsonl
+data/reports/last_build_output.txt
+reports/pipeline_v2/runtime/
 
-# [Models & Weights]
-adapters/
-output/
-outputs/
-checkpoint-*/
-unsloth_compiled_cache/
-
-# [Whitelisted Files] (Exceptions)
-!LICENSE.txt
-!CMakeLists.txt
-!README.txt
-!ENVIRONMENT_SETUP_LOG.txt
-!requirements.txt
-!data/
-data/*
-!data/lacan_sft_pairs_checked.jsonl
-!data/quality_report.json
-!data/gemma4_e2b_continuous_5000_train.jsonl
-!data/gemma4_e2b_continuous_5000_validation.jsonl
-.env
-.env.*
-!.env.example
-!adapters/
-!adapters/gemma4_e2b_4bit_nf4_continuous_1p5ep_5000/
-!adapters/gemma4_e2b_4bit_nf4_continuous_1p5ep_5000/*
-!adapters/gemma4_e2b_8bit_continuous_1p5ep_5000/
-!adapters/gemma4_e2b_8bit_continuous_1p5ep_5000/*
-experiments/logs/
-experiments/runner*.log
-!experiments/continuous_manifest.jsonl
-!experiments/*_metrics.jsonl
-!experiments/summary.json
-!experiments/quantization_epoch_comparison.png
+# Large legacy runtime outputs were intentionally archived locally.
+legacy/outputs/
+legacy/experiments/logs/
+legacy/experiments/runner*.log

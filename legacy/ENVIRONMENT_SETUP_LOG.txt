@@ -1,0 +1,81 @@
+LacanLLM environment and project notes
+Generated: 2026-05-04 America/Los_Angeles
+
+Hardware observed
+- GPU: NVIDIA GeForce RTX 5070
+- GPU memory: 12227 MiB
+- NVIDIA driver: 596.21
+- nvidia-smi CUDA runtime support: 13.2
+- Installed CUDA Toolkit detected by nvcc: 12.6
+- Python launcher: Python 3.11.5 at C:\Program Files\Python311\python.exe
+
+PyTorch choice
+- Use PyTorch CUDA 13.0 wheels for this Windows environment.
+- Reason: the first attempted cu126 install imported successfully, but PyTorch warned that RTX 5070 compute capability sm_120 is not supported by that build. PyTorch recommended CUDA 12.8 or 13.0 builds for this GPU. The installed NVIDIA driver supports CUDA 13.2, so cu130 is the appropriate wheel choice.
+- Install command:
+  python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
+
+Virtual environment policy
+- Use a Windows virtual environment at .venv created from Python 3.11.
+- Do not reuse the previous .venv. It was created from WSL/Linux paths and cannot run from Windows PowerShell.
+- Activate in PowerShell:
+  .\.venv\Scripts\Activate.ps1
+
+Package policy
+- Install PyTorch first from the official cu130 index.
+- Install the remaining packages from requirements.txt:
+  python -m pip install -r requirements.txt
+- Unsloth is intentionally removed from the project because the new route uses standard Transformers, PEFT, and bitsandbytes.
+- TRL was tested but kept out of the critical path because its current package import fails under this Windows GBK locale when reading bundled Jinja templates without an explicit UTF-8 encoding. The training script now uses transformers.Trainer directly.
+
+Verified package state
+- torch 2.11.0+cu130
+- torchvision 0.26.0+cu130
+- torchaudio 2.11.0+cu130
+- transformers 5.7.0
+- datasets 4.8.5
+- peft 0.19.1
+- bitsandbytes 0.49.2
+- accelerate 1.13.0
+- PyTorch CUDA check: torch.cuda.is_available() == True
+- CUDA tensor allocation on RTX 5070 succeeded.
+
+Data files
+- Source files live in data\lacan_source_texts and should be preserved.
+- Regenerated files:
+  data\lacan_full_corpus.txt
+  data\lacan_dataset.jsonl
+  data\lacan_sft_pairs.jsonl
+  data\lacan_training_data.jsonl
+- These generated files are ignored by git.
+- Cleanup status on 2026-05-04: unsloth_compiled_cache and data\lacan_training_data.jsonl were removed. Windows reported data\lacan_full_corpus.txt, data\lacan_dataset.jsonl, and data\lacan_sft_pairs.jsonl as locked by another process, so they could not be removed in this session. Close editors/search/indexers that may be holding these files, then delete them before rerunning the default pipeline.
+
+Required secret
+- Set HF_TOKEN in the shell before running gated Hugging Face models:
+  $env:HF_TOKEN = "your_token_here"
+- Do not hard-code Hugging Face tokens in Python files. Any previously exposed token should be revoked in Hugging Face settings.
+
+Recommended pipeline
+1. Clean source text:
+   python scripts\clean_lacan.py
+2. Generate instruction/output pairs:
+   python scripts\generate_sft_gemma.py --model-id google/gemma-4-E4B-it
+3. Prepare training data only:
+   python scripts\run_pipeline.py --prepare-only --model-id google/gemma-4-E4B-it
+4. Train LoRA adapter:
+   python scripts\run_pipeline.py --skip-prepare --model-id google/gemma-4-E4B-it --auto-resume
+
+Data-cleaning review
+- The old cleaning script had path errors when run from the project root and joined lines based on sentence-ending punctuation. That can incorrectly merge independent lines or split long Lacanian sentences.
+- The new cleaner treats blank-line separated blocks as paragraph candidates, repairs hyphenated line breaks, removes obvious page numbers, filters very short/very long blocks, and records source metadata.
+- Temporary validation run after tightening filters kept 51,460 paragraph candidates from 46 source txt files.
+- Temporary validation paragraph length summary: min 120 chars, mean 456 chars, max 3507 chars.
+- Remaining risk: the source text has encoding corruption markers such as mojibake characters. The cleaner records a mojibake_score per paragraph, but it does not automatically repair corrupted text. For publication-quality work, source files should be regenerated from PDFs or checked with a dedicated encoding/OCR cleanup pass.
+- Remaining risk: footnotes and editorial notes still appear in some places. The current cleaner removes obvious numbered bracket notes and bibliographic boilerplate, but a publication workflow should still include manual sampling or an additional classifier/rule pass.
+
+Training-logic review
+- The original project used generated questions from Gemma and then fine-tuned Gemma on those question/passage pairs. This is workable as data distillation, but it should not be described as learning directly from human-authored QA unless manually validated.
+- Sorting by output length as a quality score is weak. It tends to overselect long passages and may bias training toward verbose answers.
+- A better training design is: preserve source metadata, generate candidate questions, sample/inspect a validation subset, filter malformed questions, split train/validation by source file, and evaluate with held-out passages/questions.
+- With 12GB VRAM, 4-bit QLoRA on a 4B model is realistic. Full fine-tuning is not realistic on this machine.
+- Training script update: run_pipeline.py now defaults to google/gemma-4-E4B-it, supports AutoProcessor/AutoTokenizer loading, creates train/validation JSONL splits, filters overlong passages before training, evaluates during training, writes adapter metadata, and can resume from the latest checkpoint with --auto-resume.

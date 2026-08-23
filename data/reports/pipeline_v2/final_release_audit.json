@@ -1,0 +1,154 @@
+{
+  "artifact_sha256": {
+    "challenge": "e83eed4c3a6343d34b217947125bfaf1e20ef51f13a5b7173868e3bbe8a8c8e5",
+    "test": "54dca696b6524702d3a6e0f81796c71bd50aea653367ccdfae14cf7a51486413",
+    "train": "46e8ba42866864a57d831022c1c7ec5305517397f59dcf08bb1e6c913c513c77",
+    "validation": "f36f9a52f8fea547f20ffce0e06bb8c714ad685aed7aaefdf542c3d565ad67f5"
+  },
+  "benchmark_grade": "silver",
+  "checks": {
+    "dual_judge_present": true,
+    "excluded_types_absent": true,
+    "global_exact_answers_unique": true,
+    "global_exact_questions_unique": true,
+    "pipeline_provenance_preserved": true,
+    "silver_benchmark_labels": true,
+    "split_manifest_valid": true,
+    "target_counts": true,
+    "test_sealed": true,
+    "type_quotas": true
+  },
+  "created_at": "2026-08-23T02:00:25.994917+00:00",
+  "excluded_question_types": [
+    "ambiguous",
+    "other"
+  ],
+  "global_duplicate_rows": 42,
+  "known_limitations": [
+    "No human review was performed.",
+    "Anonymous source files may originate from the same underlying work.",
+    "Validation has no source floor because one fixed source has only 32 eligible consensus rows.",
+    "The other and ambiguous question types are intentionally excluded from this release."
+  ],
+  "pipeline_config_hash": "e82fe780b55a748de6a243e0c05d3620bbd62345e02f5c0b3e9b8fee17ff895c",
+  "pipeline_version": "pipeline_v2",
+  "release_profile": "configs/data/final_release.json",
+  "release_profile_hash": "8265028a2c3a43efd08bf745f5b1b9d3c18927184e24394a86df67a667ad1078",
+  "release_version": "final_release_v1",
+  "selection": {
+    "challenge": {
+      "rows": 70,
+      "sources": {
+        "lacan_text_001.txt": 16,
+        "lacan_text_010.txt": 3,
+        "lacan_text_027.txt": 16,
+        "lacan_text_033.txt": 18,
+        "lacan_text_043.txt": 17
+      },
+      "target": 70,
+      "types": {
+        "concept_confusion": 25,
+        "cross_concept": 20,
+        "unanswerable": 25
+      }
+    },
+    "test": {
+      "rows": 200,
+      "sources": {
+        "lacan_text_001.txt": 40,
+        "lacan_text_010.txt": 40,
+        "lacan_text_027.txt": 40,
+        "lacan_text_033.txt": 40,
+        "lacan_text_043.txt": 40
+      },
+      "target": 200,
+      "types": {
+        "clinical_application": 22,
+        "comparison": 35,
+        "cross_concept": 26,
+        "definition": 43,
+        "explanation": 39,
+        "textual_interpretation": 35
+      }
+    },
+    "train": {
+      "rows": 500,
+      "sources": {
+        "lacan_text_000.txt": 15,
+        "lacan_text_002.txt": 13,
+        "lacan_text_003.txt": 16,
+        "lacan_text_004.txt": 16,
+        "lacan_text_005.txt": 2,
+        "lacan_text_006.txt": 14,
+        "lacan_text_007.txt": 16,
+        "lacan_text_008.txt": 15,
+        "lacan_text_011.txt": 13,
+        "lacan_text_013.txt": 12,
+        "lacan_text_015.txt": 15,
+        "lacan_text_016.txt": 18,
+        "lacan_text_017.txt": 14,
+        "lacan_text_018.txt": 17,
+        "lacan_text_019.txt": 17,
+        "lacan_text_020.txt": 13,
+        "lacan_text_021.txt": 18,
+        "lacan_text_022.txt": 16,
+        "lacan_text_023.txt": 16,
+        "lacan_text_025.txt": 15,
+        "lacan_text_028.txt": 14,
+        "lacan_text_029.txt": 17,
+        "lacan_text_030.txt": 14,
+        "lacan_text_031.txt": 16,
+        "lacan_text_032.txt": 13,
+        "lacan_text_034.txt": 13,
+        "lacan_text_035.txt": 18,
+        "lacan_text_037.txt": 18,
+        "lacan_text_038.txt": 15,
+        "lacan_text_039.txt": 17,
+        "lacan_text_040.txt": 12,
+        "lacan_text_041.txt": 16,
+        "lacan_text_042.txt": 13,
+        "lacan_text_044.txt": 11,
+        "lacan_text_045.txt": 2
+      },
+      "target": 500,
+      "types": {
+        "clinical_application": 50,
+        "comparison": 75,
+        "cross_concept": 50,
+        "definition": 100,
+        "explanation": 100,
+        "textual_interpretation": 125
+      }
+    },
+    "validation": {
+      "rows": 200,
+      "sources": {
+        "lacan_text_009.txt": 23,
+        "lacan_text_012.txt": 40,
+        "lacan_text_014.txt": 48,
+        "lacan_text_026.txt": 44,
+        "lacan_text_036.txt": 45
+      },
+      "target": 200,
+      "types": {
+        "clinical_application": 22,
+        "comparison": 35,
+        "cross_concept": 26,
+        "definition": 43,
+        "explanation": 39,
+        "textual_interpretation": 35
+      }
+    }
+  },
+  "test_seal": {
+    "benchmark_grade": "silver",
+    "dataset_version": "benchmark_v2",
+    "pipeline_config_hash": "e82fe780b55a748de6a243e0c05d3620bbd62345e02f5c0b3e9b8fee17ff895c",
+    "release_profile_hash": "8265028a2c3a43efd08bf745f5b1b9d3c18927184e24394a86df67a667ad1078",
+    "release_version": "final_release_v1",
+    "rows": 200,
+    "sealed": true,
+    "sealed_at": "2026-08-23T02:00:25.937566+00:00",
+    "sha256": "54dca696b6524702d3a6e0f81796c71bd50aea653367ccdfae14cf7a51486413"
+  }
+}

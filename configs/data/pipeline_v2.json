@@ -1,0 +1,131 @@
+{
+  "pipeline_version": "pipeline_v2",
+  "corpus_version": "corpus_v2",
+  "sft_version": "sft_v3",
+  "benchmark_version": "benchmark_v2",
+  "queue_version": "pipeline_v2.queue.2",
+  "seed": 3407,
+  "paths": {
+    "raw_corpus": "legacy/data/lacan_dataset.jsonl",
+    "clean_corpus": "data/processed/corpus_v2/paragraphs.jsonl",
+    "clean_rejections": "data/reports/pipeline_v2/clean_rejections.jsonl",
+    "split_manifest": "data/manifests/pipeline_v2/splits.json",
+    "interim_root": "data/interim/pipeline_v2",
+    "train_output": "data/processed/sft_v3/train.jsonl",
+    "benchmark_root": "data/processed/benchmark_v2",
+    "audit_file": "data/reports/pipeline_v2/audit.json",
+    "test_manifest": "data/manifests/pipeline_v2/test_seal.json",
+    "record_file": "data/PIPELINE_V2_RECORD.md"
+  },
+  "validation_sources": [
+    "lacan_text_009.txt",
+    "lacan_text_012.txt",
+    "lacan_text_014.txt",
+    "lacan_text_026.txt",
+    "lacan_text_036.txt"
+  ],
+  "test_sources": [
+    "lacan_text_001.txt",
+    "lacan_text_010.txt",
+    "lacan_text_027.txt",
+    "lacan_text_033.txt",
+    "lacan_text_043.txt"
+  ],
+  "final_quotas": {
+    "train": {
+      "definition": 100,
+      "explanation": 90,
+      "comparison": 80,
+      "textual_interpretation": 80,
+      "cross_concept": 60,
+      "clinical_application": 50,
+      "other": 40
+    },
+    "validation": {
+      "definition": 50,
+      "explanation": 45,
+      "comparison": 40,
+      "textual_interpretation": 40,
+      "cross_concept": 30,
+      "clinical_application": 25,
+      "other": 20
+    },
+    "test": {
+      "definition": 50,
+      "explanation": 45,
+      "comparison": 40,
+      "textual_interpretation": 40,
+      "cross_concept": 30,
+      "clinical_application": 25,
+      "other": 20
+    },
+    "challenge": {
+      "unanswerable": 25,
+      "ambiguous": 25,
+      "concept_confusion": 25,
+      "cross_concept": 25
+    }
+  },
+  "initial_candidate_multiplier": 2.2,
+  "max_attempts": {
+    "train": 2000,
+    "validation": 1000,
+    "test": 1000,
+    "challenge": 500
+  },
+  "candidate_source_caps": {
+    "train": 50,
+    "validation": 130,
+    "test": 130,
+    "challenge": 100
+  },
+  "final_source_caps": {
+    "train": 25,
+    "validation": 60,
+    "test": 60,
+    "challenge": 30
+  },
+  "final_source_floors": {
+    "validation": 40,
+    "test": 40
+  },
+  "cleaning": {
+    "min_chars": 240,
+    "max_chars": 1800,
+    "min_alphabetic_ratio": 0.6,
+    "repeated_ngram_size": 8,
+    "repeated_ngram_count": 3
+  },
+  "hard_filter": {
+    "min_question_chars": 35,
+    "max_question_chars": 280,
+    "min_answer_chars": 120,
+    "max_answer_chars": 900,
+    "min_quote_chars": 30,
+    "max_quote_chars": 500,
+    "min_answer_source_overlap": 0.35,
+    "long_copy_min_tokens": 40,
+    "question_simhash_distance": 14,
+    "answer_simhash_distance": 8
+  },
+  "generation": {
+    "model_id": "google/gemma-4-E2B-it",
+    "prompt_version": "pipeline_v2.generate.2",
+    "temperature": 0.25,
+    "top_p": 0.9,
+    "max_new_tokens": 420,
+    "batch_size": 2,
+    "load_in_4bit": true
+  },
+  "judge": {
+    "model_id": "google/gemma-4-E4B-it",
+    "rubric_prompt_version": "pipeline_v2.judge.rubric.1",
+    "adversarial_prompt_version": "pipeline_v2.judge.adversarial.1",
+    "temperature": 0.0,
+    "max_new_tokens": 700,
+    "batch_size": 1,
+    "load_in_4bit": true,
+    "minimum_dimension_score": 4,
+    "parse_retries": 1
+  }
+}

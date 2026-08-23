@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lacanllm"
+version = "0.3.0"
+description = "Auditable data and training pipelines for LacanLLM"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.4,<9",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+lacanllm-data = "lacanllm.data.build:main"
+lacanllm-pipeline-v2 = "lacanllm.data.pipeline_v2:main"
+lacanllm-final-release = "lacanllm.data.release:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "SIM", "UP"]
