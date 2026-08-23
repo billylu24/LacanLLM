@@ -35,6 +35,7 @@ unsloth_compiled_cache/
 !requirements.txt
 !data/
 data/*
+!data/lacan_dataset.jsonl
 !data/lacan_sft_pairs_checked.jsonl
 !data/quality_report.json
 !data/gemma4_e2b_continuous_5000_train.jsonl

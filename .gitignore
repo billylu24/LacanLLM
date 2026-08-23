@@ -9,8 +9,7 @@ dist/
 build/
 *.egg-info/
 
-# Rebuildable intermediate artifacts.
-data/interim/
+# Local report scratch files.
 data/reports/rejections.jsonl
 data/reports/last_build_output.txt
 reports/pipeline_v2/runtime/
