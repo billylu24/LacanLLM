@@ -1,0 +1,8 @@
+{
+  "artifact": "paragraphs.jsonl",
+  "description": "Immutable conservatively cleaned source corpus inherited from Pipeline v2",
+  "rows": 32028,
+  "sha256": "721050bef287bdd68846bfb0842ca4b917b56c37fbe45b8926f629f0b92744da",
+  "source_corpus_version": "corpus_v2",
+  "v3_role": "source_input"
+}

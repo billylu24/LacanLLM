@@ -1,9 +1,0 @@
-{
-  "benchmark_grade": "silver",
-  "config_hash": "e82fe780b55a748de6a243e0c05d3620bbd62345e02f5c0b3e9b8fee17ff895c",
-  "dataset_version": "benchmark_v2",
-  "rows": 212,
-  "sealed": false,
-  "sealed_at": "2026-08-22T03:57:32.000994+00:00",
-  "sha256": "f19d35aee06e1db2e5500080f322776bbec9a9f490aeedfee98fb5944be38e93"
-}
