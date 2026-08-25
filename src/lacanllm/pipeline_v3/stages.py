@@ -251,7 +251,7 @@ def _run_model_stage(
     role: str,
     input_name: str,
     output_name: str,
-    prompt_builder: Callable[[dict[str, Any], str | None], str],
+    prompt_builder: Callable[[dict[str, Any]], str],
     validator: Callable[[Any], dict[str, Any]] | Callable[[Any, dict[str, Any]], dict[str, Any]],
     backend_override: str | None = None,
 ) -> dict[str, Any]:
@@ -259,38 +259,35 @@ def _run_model_stage(
     output = config.artifact(output_name)
     existing = list(read_jsonl(output))
     require_hash(existing, config.config_hash, output)
-    done = completed_ids(output)
+    error_output = config.artifact(f"errors/{role}.jsonl")
+    errors = list(read_jsonl(error_output))
+    require_hash(errors, config.config_hash, error_output)
+    done = completed_ids(output) | completed_ids(error_output)
     pending = [source for source in inputs if source["candidate_id"] not in done]
-    appended = retries = 0
+    appended = rejected = 0
     started = time.monotonic()
     backend = None
     if pending:
         backend = make_backend(role, config.raw, config.artifact(f"offload/{role}"), backend_override)
     try:
         for source in pending:
-            error: str | None = None
-            for attempt in range(2):
-                payload, metrics = backend.call(prompt_builder(source, error), source, repair=attempt == 1)
-                try:
-                    validated = validator(payload, source) if role == "generator" else validator(payload)  # type: ignore[call-arg]
-                    break
-                except ValueError as exc:
-                    error = str(exc)
-                    if attempt == 1:
-                        append_jsonl(
-                            config.artifact(f"errors/{role}.jsonl"),
-                            {
-                                "candidate_id": source["candidate_id"],
-                                "attempt": attempt + 1,
-                                "error": error,
-                                "parsed_payload": payload,
-                                **config.stamp(),
-                            },
-                        )
-                        raise RuntimeError(
-                            f"{role} failed structured output after one repair for {source['candidate_id']}: {error}"
-                        ) from exc
-                    retries += 1
+            payload: Any = None
+            try:
+                payload, metrics = backend.call(prompt_builder(source), source)
+                validated = validator(payload, source) if role == "generator" else validator(payload)  # type: ignore[call-arg]
+            except ValueError as exc:
+                append_jsonl(
+                    error_output,
+                    {
+                        "candidate_id": source["candidate_id"],
+                        "attempt": 1,
+                        "error": str(exc),
+                        "parsed_payload": payload,
+                        **config.stamp(),
+                    },
+                )
+                rejected += 1
+                continue
             row = {
                 **source,
                 **validated,
@@ -298,7 +295,6 @@ def _run_model_stage(
                 f"{role}_model_revision": config.raw[role]["revision"],
                 f"{role}_prompt_version": config.raw[role]["prompt_version"],
                 f"{role}_metrics": metrics,
-                f"{role}_repair_retries": int(error is not None),
             }
             if role == "judge":
                 row["quality_pass"] = judgment_passes(validated)
@@ -315,7 +311,8 @@ def _run_model_stage(
         "total_rows": len(all_rows),
         "appended_rows": appended,
         "backend_loaded": backend is not None,
-        "repair_retries": retries,
+        "rejected_rows": sum(1 for _ in read_jsonl(error_output)),
+        "appended_rejections": rejected,
         "wall_seconds": time.monotonic() - started,
         "artifact_sha256": file_hash(output) if output.exists() else None,
     }
@@ -380,7 +377,7 @@ def deduplicate(config: PipelineConfig) -> dict[str, Any]:
     output_rows: list[dict[str, Any]] = []
     for row in rows:
         question = _normalize(row["question"])
-        answer = _normalize(row["reference_answer"])
+        answer = _normalize(row["answer"])
         context = _normalize("\n".join(item["text"] for item in row["contexts"]))
         signatures = (_simhash64(question), _simhash64(answer), _simhash64(context))
         duplicate_of = None
@@ -505,6 +502,8 @@ def status(config: PipelineConfig) -> dict[str, Any]:
         "05_hard_filter/records.jsonl",
         "06_deduplicate/records.jsonl",
         "07_judge/records.jsonl",
+        "errors/generator.jsonl",
+        "errors/judge.jsonl",
     ]
     return {
         **config.stamp(),
@@ -577,8 +576,6 @@ def smoke(config: PipelineConfig, backend: str | None = None, remote_preflight: 
         "quality_pass_rate": sum(row["quality_pass"] for row in judged) / len(judged) if judged else 0.0,
         "model_id": config.raw["generator"]["model_id"],
         "model_revision": config.raw["generator"]["revision"],
-        "generator_repair_retries": sum(row["generator_repair_retries"] for row in generated),
-        "judge_repair_retries": sum(row["judge_repair_retries"] for row in judged),
         "model_inference_seconds": total_seconds,
         "output_tokens": total_tokens,
         "aggregate_tokens_per_second": total_tokens / total_seconds if total_seconds else 0.0,

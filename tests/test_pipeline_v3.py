@@ -76,7 +76,7 @@ def test_context_queue_constraints(prepared: PipelineConfig) -> None:
             assert 0 < abs(contexts[0]["paragraph_index"] - contexts[1]["paragraph_index"]) <= 10
 
 
-def _valid_record(question_type: str = "definition") -> dict[str, object]:
+def _valid_record() -> dict[str, object]:
     text = "The subject encounters a limit in speech, and the passage describes that limit explicitly."
     candidate = {
         "candidate_id": "candidate",
@@ -85,56 +85,46 @@ def _valid_record(question_type: str = "definition") -> dict[str, object]:
     generated = validate_generation(
         {
             "question": "What limit does the passage describe?",
-            "reference_answer": (
+            "answer": (
                 "The passage describes a limit encountered in speech. "
                 "It explicitly attributes that limit to the subject's encounter."
             ),
-            "evidence": [{"context_id": "ctx", "quote": "The subject encounters a limit in speech"}],
-            "question_type": question_type,
         },
         candidate,
     )
     return {**candidate, **generated}
 
 
-def test_exact_evidence_offsets_and_pair_coverage() -> None:
+def test_minimal_generation_schema_and_context_is_pipeline_owned() -> None:
     record = _valid_record()
-    assert record["evidence"][0]["start"] == 0  # type: ignore[index]
+    assert set(record) == {"candidate_id", "contexts", "question", "answer"}
     assert hard_filter(record) == []
-    paired = dict(record)
-    paired["contexts"] = [*record["contexts"], {"context_id": "ctx2", "text": "A nearby paragraph."}]  # type: ignore[index]
-    assert hard_filter(paired) == ["paired_context_missing_evidence"]
-    with pytest.raises(ValueError, match="continuous exact source span"):
+    with pytest.raises(ValueError, match="exactly question and answer"):
         validate_generation(
             {
                 "question": "What limit does the passage describe?",
-                "reference_answer": "It describes a limit in speech. The claim remains source bound.",
-                "evidence": [{"context_id": "ctx", "quote": "not present"}],
+                "answer": "It describes a limit in speech. The claim remains source bound.",
+                "evidence": "unrequested",
             },
             {"contexts": record["contexts"]},
         )
 
 
-def test_question_type_is_metadata_only() -> None:
-    first = _valid_record("definition")
-    second = _valid_record("ambiguous")
-    assert hard_filter(first) == hard_filter(second) == []
+def test_judge_uses_context_support_not_extracted_evidence() -> None:
     judgment = {
         "question_answerability": "answerable",
         "response_appropriate": True,
         "faithful": True,
-        "evidence_supports_response": True,
+        "context_supports_answer": True,
         "self_contained": True,
         "overclaim": False,
         "contradiction": False,
         "answerability_score": 4,
         "faithfulness_score": 4,
-        "evidence_score": 4,
+        "context_support_score": 4,
         "self_containment_score": 4,
     }
     assert judgment_passes(judgment)
-    first["question_type"] = "anything"
-    assert hard_filter(first) == []
 
 
 def test_json_extraction_and_config_hash_isolation(tmp_path: Path) -> None:
@@ -166,9 +156,8 @@ def test_global_dedup_uses_test_validation_train_precedence(tmp_path: Path) -> N
     common = {
         **config.stamp(),
         "question": "What does the source say about speech?",
-        "reference_answer": "The source describes a limit in speech. It presents that limit directly.",
+        "answer": "The source describes a limit in speech. It presents that limit directly.",
         "contexts": [{"context_id": "ctx", "text": "A stable shared context."}],
-        "evidence": [{"context_id": "ctx", "quote": "A stable", "start": 0, "end": 8}],
         "hard_filter_pass": True,
     }
     rows = [
@@ -185,43 +174,33 @@ def test_global_dedup_uses_test_validation_train_precedence(tmp_path: Path) -> N
     assert {row["duplicate_of"] for row in output[1:]} == {"test"}
 
 
-def test_one_structured_repair_retry(monkeypatch: pytest.MonkeyPatch, prepared: PipelineConfig, tmp_path: Path) -> None:
+def test_invalid_generation_is_rejected_without_retry(
+    monkeypatch: pytest.MonkeyPatch, prepared: PipelineConfig, tmp_path: Path
+) -> None:
     raw = dict(prepared.raw)
-    raw["work_root"] = str(tmp_path / "data/pipeline_v3/repair")
+    raw["work_root"] = str(tmp_path / "data/pipeline_v3/rejection")
     config = PipelineConfig(Path("config.json"), raw, object_hash(raw))
     candidates = list(read_jsonl(prepared.artifact("03_queue/candidates.jsonl")))[:1]
     candidates[0] = {**candidates[0], **config.stamp()}
     write_jsonl(config.artifact("03_queue/candidates.jsonl"), candidates)
 
-    class RepairBackend:
+    class InvalidBackend:
         calls = 0
 
-        def call(self, prompt: str, candidate: dict[str, object], repair: bool = False):  # noqa: ANN001
+        def call(self, prompt: str, candidate: dict[str, object]):  # noqa: ANN001
             del prompt
             self.calls += 1
-            if not repair:
-                return {"bad": True}, {}
-            context = candidate["contexts"][0]  # type: ignore[index]
-            return (
-                {
-                    "question": "What claim does this passage make?",
-                    "reference_answer": (
-                        "The passage states the selected claim directly. The cited text supplies its basis."
-                    ),
-                    "evidence": [{"context_id": context["context_id"], "quote": context["text"][:40]}],
-                },
-                {},
-            )
+            return {"bad": True}, {}
 
         def close(self) -> None:
             return
 
-    backend = RepairBackend()
+    backend = InvalidBackend()
     monkeypatch.setattr(stages, "make_backend", lambda *args, **kwargs: backend)
     report = stages.generate(config, backend="fake")
-    assert report["appended_rows"] == 1
-    assert report["repair_retries"] == 1
-    assert backend.calls == 2
+    assert report["appended_rows"] == 0
+    assert report["appended_rejections"] == 1
+    assert backend.calls == 1
 
 
 def test_complete_fake_smoke_and_idempotent_resume(prepared: PipelineConfig) -> None:

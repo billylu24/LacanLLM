@@ -19,9 +19,7 @@ appropriate. The generator receives the source text and writes one complete
 record containing:
 
 - a question that can be understood on its own;
-- a reference answer based only on the supplied source;
-- exact evidence quote(s) copied from the supplied source;
-- a question-type label used only as metadata.
+- an answer based only on the supplied source.
 
 The generator must not use external facts to complete the answer. The source
 paragraphs are original corpus material, not pre-existing QA pairs. Pipeline v2
@@ -29,10 +27,9 @@ currently uses the untuned `google/gemma-4-E2B-it` model for this generation.
 The revised initial Pipeline v3 production run instead uses the pinned
 instruction-tuned **Gemma 4 12B** model as its QA generator.
 
-Unlike Pipeline v2, Pipeline v3 will not assign a target question type before
-generation. The model should first produce the best grounded QA item for the
-source. It may self-report a type afterward, or a later metadata pass may assign
-one. In either case, the label must not affect acceptance.
+Unlike Pipeline v2, Pipeline v3 does not ask the generator to classify the
+question or extract exact evidence spans. Context and source provenance are
+owned by the pipeline and joined to the generated question and answer.
 
 ## Dataset topology and initial scale
 
@@ -60,21 +57,9 @@ or privileged datasets.
 
 ## Classification policy
 
-Classification is retained for diagnosis and reporting only. It may be used to
-answer questions such as whether the model performs worse on definitions,
-comparisons, ambiguity, or concept confusion.
-
-Classification must not be used to:
-
-- accept or reject an otherwise valid QA item;
-- impose per-category quotas, floors, or caps;
-- choose source paragraphs for the purpose of filling a category;
-- refill a deficient category;
-- rank one valid example above another solely because of its type;
-- exclude labels such as `other` or `ambiguous` merely because of the label.
-
-A generator/judge disagreement about the label is recorded as metadata and is
-not itself a rejection reason.
+Generation has no classification task. If diagnostic question types are useful
+later, they must be derived in a separate downstream analysis and must never
+affect acceptance, sampling, refill, ranking, or split size.
 
 ## Model roles
 
@@ -82,8 +67,8 @@ The revised initial production run assigns the pinned Gemma model to both roles:
 
 | Role | Planned model | Responsibility |
 |---|---|---|
-| QA generator | Gemma 4 12B, instruction-tuned | Write the question, reference answer, exact evidence quote(s), and optional classification metadata from source context |
-| Semantic judge | Gemma 4 12B, instruction-tuned | Check answerability, faithfulness, evidence support, self-containment where appropriate, overclaim, and contradiction |
+| QA generator | Gemma 4 12B, instruction-tuned | Write only a grounded question and answer from source context |
+| Semantic judge | Gemma 4 12B, instruction-tuned | Check the context, question, and answer for answerability, faithfulness, support, self-containment, overclaim, and contradiction |
 | Fine-tuning base | Qwen3.5-9B or Gemma 4 12B | To be selected by a controlled Validation comparison rather than assumed in advance |
 
 The canonical model repository IDs, supported quantization mode, context
@@ -103,7 +88,7 @@ The first hardware and orchestration smoke test may use the exact ungated model
 `google/gemma-4-12B-it` at revision
 `707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7` for both generation and judging.
 This exception exists only to test 4-bit NF4 loading, CPU offload, structured
-output, evidence binding, lifecycle unload/reload, and resumability on the
+output, lifecycle unload/reload, and resumability on the
 available 12 GB GPU. Thinking is disabled for both roles. Smoke artifacts live
 under a dedicated smoke path and can never enter a formal dataset.
 
@@ -140,13 +125,14 @@ as a separately named experiment, not silently substituted for Gemma 4 12B.
 1. Conservatively clean the original corpus without rewriting its claims.
 2. Assign source files to Train, Validation, and Test with no source overlap.
 3. Sample eligible source context independently of question category.
-4. Generate a question, reference answer, exact evidence quote(s), and optional
-   classification metadata using only that context.
-5. Apply deterministic validity checks: parseable schema, usable lengths,
-   exact evidence mapping, no malformed/meta output, and no excessive copying.
+4. Generate only a question and answer using that context; the pipeline joins
+   them back to the complete context and source provenance.
+5. Apply deterministic validity checks: exact two-field schema, usable lengths,
+   and no malformed or meta output. Invalid rows are rejected without retry and
+   do not stop the batch.
 6. Remove exact and near-duplicate questions, answers, and contexts globally.
 7. Use Gemma 4 12B for semantic quality review of answerability, faithfulness,
-   evidence support, self-containment where appropriate, overclaim, and
+   context support, self-containment where appropriate, overclaim, and
    contradiction.
 8. Retain every quality-passing item up to the split-size target, independently
    of classification. Source diversity may be used as a tie-breaker, not as a
@@ -160,7 +146,7 @@ as a separately named experiment, not silently substituted for Gemma 4 12B.
 following protections remain essential:
 
 - every ordinary answer is grounded in its supplied source;
-- evidence quotes map exactly back to source text;
+- every question and answer retains its complete source context and provenance;
 - unsupported claims, contradictions, and material overclaims are rejected;
 - malformed output and long verbatim copying are rejected;
 - exact and near duplicates are removed;
@@ -192,7 +178,7 @@ The implementation is complete only when:
 
 - it writes to versioned v3 paths and leaves v2 untouched;
 - its only splits are Train, Validation, and sealed Test;
-- generated records preserve source provenance and exact evidence;
+- generated records preserve source provenance and complete context;
 - Gemma 4 12B is recorded as both generator and semantic judge in every
   generated or judged row, and the audit identifies the run as self-judged;
 - changing a classification label cannot change acceptance or selection;

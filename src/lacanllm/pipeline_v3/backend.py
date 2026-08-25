@@ -28,42 +28,34 @@ class FakeBackend:
         self.role = role
         self.loaded_at = time.monotonic()
 
-    def call(
-        self, prompt: str, candidate: dict[str, Any], repair: bool = False
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
-        del prompt, repair
+    def call(self, prompt: str, candidate: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        del prompt
         if self.role == "generator":
-            evidence = []
             short_id = candidate["candidate_id"][:8]
-            for context in candidate["contexts"]:
-                quote = context["text"][: min(120, len(context["text"]))]
-                evidence.append({"context_id": context["context_id"], "quote": quote})
             payload = {
                 "question": f"How does the supplied passage frame its central claim for candidate {short_id}?",
-                "reference_answer": f"The passage presents the central claim selected for record {short_id} "
+                "answer": f"The passage presents the central claim selected for record {short_id} "
                 "directly in the cited wording. "
                 + (
                     "The nearby passage supplies a second, related basis for this specific synthesis."
-                    if len(evidence) == 2
+                    if len(candidate["contexts"]) == 2
                     else "That wording supplies the relevant basis for this specific answer."
                 ),
-                "evidence": evidence,
-                "question_type": "interpretation",
             }
         else:
             payload = {
                 "question_answerability": "answerable",
                 "response_appropriate": True,
                 "faithful": True,
-                "evidence_supports_response": True,
+                "context_supports_answer": True,
                 "self_contained": True,
                 "overclaim": False,
                 "contradiction": False,
                 "answerability_score": 5,
                 "faithfulness_score": 5,
-                "evidence_score": 5,
+                "context_support_score": 5,
                 "self_containment_score": 5,
-                "reason": "The response is fully supported by the supplied evidence.",
+                "reason": "The answer is fully supported by the supplied context.",
             }
         return payload, {"input_tokens": 1, "output_tokens": 1, "seconds": 0.001, "tokens_per_second": 1000.0}
 
@@ -106,10 +98,7 @@ class TransformersBackend:
         self.device_map = device_counts
         self.cpu_offload = "cpu" in self.device_map
 
-    def call(
-        self, prompt: str, candidate: dict[str, Any], repair: bool = False
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
-        del repair
+    def call(self, prompt: str, candidate: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         import torch
 
         seed = self.seed ^ int(candidate["candidate_id"][:16], 16)

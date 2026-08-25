@@ -32,5 +32,8 @@ conda run -n lacanllm lacanllm-pipeline-v3 \
 
 Each generation and judgment is flushed as one JSONL record. Re-running a
 stage resumes by deterministic candidate ID, rejects stale configuration
-hashes, and writes no duplicate rows. The complete decision record is
+hashes, and writes no duplicate rows. The generator returns only `question`
+and `answer`; the pipeline joins those fields to context and provenance, and
+the Judge evaluates that three-part record. Malformed model output is logged as
+a rejection and skipped without repair or batch termination. The complete decision record is
 [`docs/DATA_PIPELINE_V3_SIMPLIFIED_PLAN.md`](docs/DATA_PIPELINE_V3_SIMPLIFIED_PLAN.md).

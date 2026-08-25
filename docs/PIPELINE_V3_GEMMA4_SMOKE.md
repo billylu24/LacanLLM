@@ -1,30 +1,26 @@
-# Pipeline v3 Gemma 4 12B smoke
+# Pipeline v3.1 Gemma 4 12B QA-only smoke
 
 Run date: 2026-08-25  
-Profile: smoke-only self-judge; not eligible for formal data production
+Profile: smoke-only self-judge; not part of formal production artifacts
 
 - Model: `google/gemma-4-12B-it`
 - Revision: `707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7`
-- Runtime: Transformers 5.15.1, Torch 2.13.0, NF4 4-bit with double
-  quantization and BF16 compute, batch size 1
-- Hardware: NVIDIA GeForce RTX 5070, 12,227 MiB VRAM
-- Candidates: six Train records: four single-context and two nearby
-  paired-context records
-- Result: 6/6 generation JSON parsed, 6/6 exact evidence maps passed, 6/6
-  deterministic hard filter passed, 6/6 Judge JSON parsed
-- Structured repair retries: generator 0, Judge 0
-- Informational Judge quality pass: 6/6 (100%)
-- Peak allocated VRAM: 8,171,325,952 bytes (7.61 GiB)
-- Peak process RSS: 16,946,152 KiB (16.16 GiB); model CPU offload was not
-  used because the quantized model fit within the GPU allocation
-- Model inference: 2,127 output tokens in 90.51 seconds, aggregate 23.50
+- Prompts: generator `generate-v3.3`, Judge `judge-v3.2`
+- Schema: generator returns exactly `question` and `answer`; the pipeline owns
+  context and source provenance
+- Runtime: NF4 4-bit with double quantization and BF16 compute, batch size 1
+- Result: 6/6 generation JSON parsed, 6/6 hard filter passed, 6/6 Judge JSON
+  parsed, and 6/6 quality passed
+- Rejections: generator 0, Judge 0; no repair path exists
+- Peak allocated VRAM: 8,088,893,952 bytes (7.53 GiB)
+- Model inference: 1,435 output tokens in 63.48 seconds, aggregate 22.61
   output tokens/second
-- Resume verification: the identical second pass appended zero generation
-  rows and zero judgment rows, loaded neither backend, and left both stage
-  JSONL hashes unchanged
+- Generator inference: 23.93 seconds total, 3.99 seconds/record
+- Judge inference: 39.55 seconds total, 6.59 seconds/record
+- Resume verification: the identical second pass appended zero generation and
+  judgment rows, loaded neither backend, and left both stage hashes unchanged
 
-The first long-ID trial also exposed an evidence `context_id` copy failure on
-one paired record after its single repair. The hard gate rejected it. Pipeline
-v3.2 now presents deterministic short IDs (`context_1`, `context_2`) to the
-model while retaining paragraph hashes separately as provenance. The clean
-post-fix run above passed without repair.
+Compared with the prior evidence-extraction smoke (90.51 seconds), the QA-only
+workflow reduced total model inference time by approximately 30% while
+eliminating exact-quote copy failures. Invalid structured output is now logged
+once and skipped without repair or batch termination.
