@@ -56,7 +56,7 @@ class PipelineConfig:
             families = [self.raw[role]["family"] for role in ("generator", "judge")]
             if any(str(value).startswith("SET_") for value in (*ids, *families)):
                 raise ValueError("production is locked until exact generator and judge model IDs are configured")
-            if ids[0] == ids[1] or families[0] == families[1]:
+            if (ids[0] == ids[1] or families[0] == families[1]) and not self.raw.get("allow_self_judge", False):
                 raise ValueError("formal production requires different generator and judge model families")
 
 

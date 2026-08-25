@@ -20,8 +20,10 @@ versioned paths and must never edit this source file in place.
 ## Pipeline v3 CLI
 
 The implementation is exposed as `lacanllm-pipeline-v3` and writes only below
-`data/pipeline_v3/`. The smoke profile uses Gemma 4 12B for both roles solely to
-validate hardware and orchestration; production rejects a self-judge profile.
+`data/pipeline_v3/`. Production uses the pinned Gemma 4 12B revision for both
+generation and review under an explicit `allow_self_judge` override. Audit
+reports therefore identify this run as self-judged rather than independently
+cross-model reviewed.
 
 ```bash
 conda run -n lacanllm lacanllm-pipeline-v3 \

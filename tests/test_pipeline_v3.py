@@ -147,12 +147,15 @@ def test_json_extraction_and_config_hash_isolation(tmp_path: Path) -> None:
         require_hash(list(read_jsonl(path)), "new", path)
 
 
-def test_production_self_judge_is_rejected() -> None:
+def test_production_self_judge_requires_explicit_override() -> None:
     raw = json.loads(SMOKE_CONFIG.read_text())
     raw["profile"] = "production"
     config = PipelineConfig(Path("config.json"), raw, object_hash(raw))
     with pytest.raises(ValueError, match="different generator and judge"):
         config.validate(production=True)
+    raw["allow_self_judge"] = True
+    config = PipelineConfig(Path("config.json"), raw, object_hash(raw))
+    config.validate(production=True)
 
 
 def test_global_dedup_uses_test_validation_train_precedence(tmp_path: Path) -> None:

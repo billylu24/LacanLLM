@@ -1,6 +1,6 @@
 # LacanLLM Simplified Data Pipeline v3 — Decision Record
 
-Status: implemented and smoke-tested on the isolated `v3` branch
+Status: implemented, smoke-tested, and revised for an explicitly self-judged initial production run on the isolated `v3` branch
 Decision date: 2026-08-24
 
 ## Purpose
@@ -26,8 +26,8 @@ record containing:
 The generator must not use external facts to complete the answer. The source
 paragraphs are original corpus material, not pre-existing QA pairs. Pipeline v2
 currently uses the untuned `google/gemma-4-E2B-it` model for this generation.
-Pipeline v3 will instead use the instruction-tuned **Qwen3.5-9B** model as its
-QA generator.
+The revised initial Pipeline v3 production run instead uses the pinned
+instruction-tuned **Gemma 4 12B** model as its QA generator.
 
 Unlike Pipeline v2, Pipeline v3 will not assign a target question type before
 generation. The model should first produce the best grounded QA item for the
@@ -78,11 +78,11 @@ not itself a rejection reason.
 
 ## Model roles
 
-Pipeline v3 assigns different model families to generation and semantic review:
+The revised initial production run assigns the pinned Gemma model to both roles:
 
 | Role | Planned model | Responsibility |
 |---|---|---|
-| QA generator | Qwen3.5-9B, instruction-tuned | Write the question, reference answer, exact evidence quote(s), and optional classification metadata from source context |
+| QA generator | Gemma 4 12B, instruction-tuned | Write the question, reference answer, exact evidence quote(s), and optional classification metadata from source context |
 | Semantic judge | Gemma 4 12B, instruction-tuned | Check answerability, faithfulness, evidence support, self-containment where appropriate, overclaim, and contradiction |
 | Fine-tuning base | Qwen3.5-9B or Gemma 4 12B | To be selected by a controlled Validation comparison rather than assumed in advance |
 
@@ -92,11 +92,12 @@ implementation writes them into the executable v3 configuration. The intended
 model identities and sizes above are fixed by this decision; the preflight only
 resolves their exact technical identifiers and compatibility settings.
 
-Using different model families for generation and review reduces the risk that
-one model simply approves artifacts caused by its own prompting or inductive
-biases. The judge remains a filter and does not rewrite failed answers in place.
+Using different model families would reduce the risk that one model approves
+artifacts caused by its own prompting or inductive biases. This initial run
+accepts that limitation explicitly. The judge remains a filter and does not
+rewrite failed answers in place.
 
-### Smoke-only Gemma self-judge exception
+### Gemma self-judge validation and production override
 
 The first hardware and orchestration smoke test may use the exact ungated model
 `google/gemma-4-12B-it` at revision
@@ -106,9 +107,12 @@ output, evidence binding, lifecycle unload/reload, and resumability on the
 available 12 GB GPU. Thinking is disabled for both roles. Smoke artifacts live
 under a dedicated smoke path and can never enter a formal dataset.
 
-This self-judge profile is forbidden for formal production. A production run
-remains locked until distinct, exact generator and judge model IDs and
-revisions from different model families are configured.
+On 2026-08-25 the initial production decision was revised: the exact pinned
+Gemma model may perform both roles when the production configuration contains
+the explicit `allow_self_judge` override. This preserves an auditable record of
+the reduced reviewer independence instead of silently weakening validation.
+The resulting dataset must be described as self-judged, not cross-model
+reviewed; a later independent audit remains recommended before external use.
 
 ## Future fine-tuning base selection
 
@@ -189,8 +193,8 @@ The implementation is complete only when:
 - it writes to versioned v3 paths and leaves v2 untouched;
 - its only splits are Train, Validation, and sealed Test;
 - generated records preserve source provenance and exact evidence;
-- Qwen3.5-9B is recorded as the generator and Gemma 4 12B as the semantic judge
-  in every generated or judged row and in the audit manifest;
+- Gemma 4 12B is recorded as both generator and semantic judge in every
+  generated or judged row, and the audit identifies the run as self-judged;
 - changing a classification label cannot change acceptance or selection;
 - source intersections between the three splits are empty;
 - duplicate checks operate across all three splits;

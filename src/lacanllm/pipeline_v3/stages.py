@@ -488,6 +488,7 @@ def audit(config: PipelineConfig) -> dict[str, Any]:
         "sealed_test": {"rows": seal_data["test_rows"], "sha256": current_test_hash},
         "generator": {key: config.raw["generator"][key] for key in ("model_id", "revision", "prompt_version")},
         "judge": {key: config.raw["judge"][key] for key in ("model_id", "revision", "prompt_version")},
+        "review_mode": "self_judge" if config.raw.get("allow_self_judge", False) else "cross_model",
     }
     if not report["source_disjoint"]:
         raise ValueError(f"source overlap detected: {overlap}")
