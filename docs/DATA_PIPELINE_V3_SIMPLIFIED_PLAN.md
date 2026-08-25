@@ -1,6 +1,6 @@
 # LacanLLM Simplified Data Pipeline v3 — Decision Record
 
-Status: design recorded; not yet implemented or used to replace Pipeline v2  
+Status: implemented and smoke-tested on the isolated `v3` branch
 Decision date: 2026-08-24
 
 ## Purpose
@@ -95,6 +95,20 @@ resolves their exact technical identifiers and compatibility settings.
 Using different model families for generation and review reduces the risk that
 one model simply approves artifacts caused by its own prompting or inductive
 biases. The judge remains a filter and does not rewrite failed answers in place.
+
+### Smoke-only Gemma self-judge exception
+
+The first hardware and orchestration smoke test may use the exact ungated model
+`google/gemma-4-12B-it` at revision
+`707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7` for both generation and judging.
+This exception exists only to test 4-bit NF4 loading, CPU offload, structured
+output, evidence binding, lifecycle unload/reload, and resumability on the
+available 12 GB GPU. Thinking is disabled for both roles. Smoke artifacts live
+under a dedicated smoke path and can never enter a formal dataset.
+
+This self-judge profile is forbidden for formal production. A production run
+remains locked until distinct, exact generator and judge model IDs and
+revisions from different model families are configured.
 
 ## Future fine-tuning base selection
 

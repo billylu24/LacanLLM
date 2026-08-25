@@ -17,8 +17,18 @@ This file is an immutable input snapshot. Pipeline v3 must write all new
 queues, generations, judgments, datasets, manifests, and reports to new
 versioned paths and must never edit this source file in place.
 
-## Next step
+## Pipeline v3 CLI
 
-The current design record is
+The implementation is exposed as `lacanllm-pipeline-v3` and writes only below
+`data/pipeline_v3/`. The smoke profile uses Gemma 4 12B for both roles solely to
+validate hardware and orchestration; production rejects a self-judge profile.
+
+```bash
+conda run -n lacanllm lacanllm-pipeline-v3 \
+  --config configs/pipeline_v3/smoke_gemma4_12b.json smoke
+```
+
+Each generation and judgment is flushed as one JSONL record. Re-running a
+stage resumes by deterministic candidate ID, rejects stale configuration
+hashes, and writes no duplicate rows. The complete decision record is
 [`docs/DATA_PIPELINE_V3_SIMPLIFIED_PLAN.md`](docs/DATA_PIPELINE_V3_SIMPLIFIED_PLAN.md).
-No v3 generation implementation or derived data exists yet.

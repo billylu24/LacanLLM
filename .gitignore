@@ -18,3 +18,12 @@ artifacts/
 
 # Model/runtime caches.
 unsloth_compiled_cache/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+data/pipeline_v3/
+artifacts/pipeline_v3/
+models/
+offload/
+.cache/huggingface/

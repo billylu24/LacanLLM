@@ -1,0 +1,42 @@
+{
+  "schema_version": "pipeline-v3-config-1",
+  "pipeline_version": "3.0.0",
+  "profile": "production",
+  "seed": 3407,
+  "source_path": "data/source/cleaned_corpus/paragraphs.jsonl",
+  "work_root": "data/pipeline_v3/production",
+  "generator": {
+    "backend": "transformers",
+    "family": "SET_DISTINCT_GENERATOR_FAMILY",
+    "model_id": "SET_DISTINCT_GENERATOR_MODEL_ID",
+    "revision": "SET_EXACT_REVISION",
+    "prompt_version": "generate-v3.2",
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "max_new_tokens": 384,
+    "thinking": false
+  },
+  "judge": {
+    "backend": "transformers",
+    "family": "SET_DISTINCT_JUDGE_FAMILY",
+    "model_id": "SET_DISTINCT_JUDGE_MODEL_ID",
+    "revision": "SET_EXACT_REVISION",
+    "prompt_version": "judge-v3.1",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_new_tokens": 320,
+    "thinking": false
+  },
+  "quantization": {
+    "load_in_4bit": true,
+    "quant_type": "nf4",
+    "double_quant": true,
+    "compute_dtype": "bfloat16",
+    "device_map": "auto",
+    "max_gpu_memory": "10GiB",
+    "max_cpu_memory": "12GiB"
+  },
+  "queue": {"count": 10000, "single_count": 8000, "pair_count": 2000, "max_context_chars": 3000, "max_pair_distance": 10},
+  "targets": {"Train": 2000, "Validation": 250, "Test": 250},
+  "dedup": {"question_distance": 14, "answer_distance": 8, "context_distance": 4}
+}
