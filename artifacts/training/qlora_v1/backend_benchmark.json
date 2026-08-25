@@ -1,0 +1,79 @@
+{
+  "comparison": {
+    "allocated_vram_reduction": -0.1318264235471185,
+    "reserved_vram_reduction": -0.11583537748705375,
+    "speedup": 1.0273684210526315,
+    "training_time_reduction": 0.02620772009622807
+  },
+  "reports": {
+    "native": {
+      "backend": "native",
+      "elapsed_seconds": 263.65678477800975,
+      "environment": {
+        "cuda_available": true,
+        "cuda_runtime": "13.0",
+        "gpu": "NVIDIA GeForce RTX 5070",
+        "gpu_capability": [
+          12,
+          0
+        ],
+        "packages": {
+          "bitsandbytes": "0.50.1",
+          "datasets": "4.3.0",
+          "optuna": "4.9.0",
+          "peft": "0.20.0",
+          "torch": "2.11.0",
+          "transformers": "5.5.0",
+          "trl": "0.24.0",
+          "unsloth": "2026.8.19"
+        },
+        "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+        "python": "3.12.14"
+      },
+      "estimated_tokens_per_second": 335.426,
+      "logit_parity": {
+        "max_abs_difference": 0.0,
+        "same_top_token": true,
+        "valid": true
+      },
+      "optimizer_steps_per_second": 0.475,
+      "peak_allocated_bytes": 7557531648,
+      "peak_reserved_bytes": 7694450688,
+      "train_loss": 2.2941712935765586,
+      "train_runtime_seconds": 252.5668,
+      "valid": true
+    },
+    "unsloth": {
+      "backend": "unsloth",
+      "elapsed_seconds": 301.7676507520009,
+      "environment": {
+        "cuda_available": true,
+        "cuda_runtime": "13.0",
+        "gpu": "NVIDIA GeForce RTX 5070",
+        "gpu_capability": [
+          12,
+          0
+        ],
+        "packages": {
+          "bitsandbytes": "0.50.1",
+          "datasets": "4.3.0",
+          "optuna": "4.9.0",
+          "peft": "0.20.0",
+          "torch": "2.11.0",
+          "transformers": "5.5.0",
+          "trl": "0.24.0",
+          "unsloth": "2026.8.19"
+        },
+        "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+        "python": "3.12.14"
+      },
+      "estimated_tokens_per_second": 344.60607999999996,
+      "optimizer_steps_per_second": 0.488,
+      "peak_allocated_bytes": 8553814016,
+      "peak_reserved_bytes": 8585740288,
+      "train_loss": 2.025254621108373,
+      "train_runtime_seconds": 245.9476,
+      "valid": true
+    }
+  }
+}

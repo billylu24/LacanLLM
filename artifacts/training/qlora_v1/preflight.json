@@ -1,0 +1,151 @@
+{
+  "config_hash": "1d99078fa88cfe7d176410d2eb620b60da813132ce1d853f54ef396c60304638",
+  "data_hashes": {
+    "challenge": "e83eed4c3a6343d34b217947125bfaf1e20ef51f13a5b7173868e3bbe8a8c8e5",
+    "train": "46e8ba42866864a57d831022c1c7ec5305517397f59dcf08bb1e6c913c513c77",
+    "validation": "f36f9a52f8fea547f20ffce0e06bb8c714ad685aed7aaefdf542c3d565ad67f5"
+  },
+  "datasets": {
+    "challenge": {
+      "rows": 70,
+      "types": {
+        "concept_confusion": 25,
+        "cross_concept": 20,
+        "unanswerable": 25
+      }
+    },
+    "train": {
+      "rows": 500,
+      "types": {
+        "clinical_application": 50,
+        "comparison": 75,
+        "cross_concept": 50,
+        "definition": 100,
+        "explanation": 100,
+        "textual_interpretation": 125
+      }
+    },
+    "validation": {
+      "rows": 200,
+      "types": {
+        "clinical_application": 22,
+        "comparison": 35,
+        "cross_concept": 26,
+        "definition": 43,
+        "explanation": 39,
+        "textual_interpretation": 35
+      }
+    }
+  },
+  "environment": {
+    "cuda_available": true,
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_capability": [
+      12,
+      0
+    ],
+    "packages": {
+      "bitsandbytes": "0.50.1",
+      "datasets": "4.3.0",
+      "optuna": "4.9.0",
+      "peft": "0.20.0",
+      "torch": "2.11.0",
+      "transformers": "5.5.0",
+      "trl": "0.24.0",
+      "unsloth": "2026.8.19"
+    },
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+    "python": "3.12.14"
+  },
+  "experiment_version": "qlora_v1",
+  "screen": {
+    "challenge_ids": [
+      "06f3cd9c2ccee8e210aacd024b098446202344aadb076ad37f5564ecef598150",
+      "11397368a522eeb1f3eeac8183feea874bf38171f2946d95948c03a1498e9ff0",
+      "1bd390ac10c7e2991e4bab374bdfaafc9aadd20ba723f12a23362f176fabebeb",
+      "336d01c64c7777910a68d6cdf70c1c81eddf851c504c4d580f246cdaa6be5d5f",
+      "385ea25a3175bc57ad7d1d823f0359914022da17a182e5d964141d570ecad8ff",
+      "48d392a6220d8d48bcf30cca9bb51593f7d1b97b5c18d467c23db6fdcedab2a2",
+      "49b57d5a85a8ef645ffeddc6352696f5efc2a391da4e1d6beeaa93d19a0e930c",
+      "5075ea3b20a2b4e9957c6f214dc71d2c0294b34138e43b849f11bcd1f177fabc",
+      "51efb8f86eb87956a659d527d98ff7cd0a68a2781415aea303d398b659a3df79",
+      "5de6f2a7c29c85800a390facb94b724f67bda66900769bef50e049290c070470",
+      "5e2c6ac946b146ec35d28011b2b224e920aee056e60925d9e7a7410b504b04ed",
+      "6f61f86dd95154489df7da535482bd6ad78ede3d52ca6bdc464b9c2998e52ff6",
+      "96b230cc0bfc2f580aef747896e586b98a810ca9c4b536287ea6335103f50657",
+      "97fd7a5859d877a3fc20f0f61446c95fe75dfc463fc4032f39a6ae8f474f7ddc",
+      "9f4abb0ff95ee2d0b2afa414fb398dae42bf3a0f18fe2641ea97cf14a1061aeb",
+      "a841e0266bd5b83a0bb4d5b7342e7bf634bfdf9f4cbe47e78ec7697bbf9f2af9",
+      "b738052d62d355df790499c6511c4a76070d5ea8ce71f99782540cd6220cf9f5",
+      "d0406260b69c5bb033f4eaa536d7ff694ec8f307e1beb49482d91c0798bf2589"
+    ],
+    "validation_ids": [
+      "024389f8fc96c2777ae3c61dea17fee46d32d997a26c304ed5518418d6f9eb5e",
+      "22b073b515fca8321f98fd7f0273142e024a6db62c0a7cbf219290304a909b6c",
+      "358555b2d9fc01f149706c68e5eeba39b555ed160072455e05c57209a5412927",
+      "36eeb5160abaf07848d35c064399f5ef28584dd52f27235a645f9a79d3c4aee8",
+      "41be0f4da3e0982be0603d0256e891429fc1f7fd84c89cc92e317e3c22852b14",
+      "532e1d7505e7821ffb4eaea6c69c1cc006c938803d0f0a034e698929cfd69277",
+      "5d871c0cbe173115d44f94b89a5dcc5b2a544e56bf71ac5df342b391b39b5a12",
+      "5e263b5f876cf5c04ab6c946e694b828c2f92ca8e391ce7d704286905d39359d",
+      "623cd048ed0fb6bd289f6018369deafbacbc49d9ee8f22e639fe820d83840308",
+      "6fdf1a1988a31f19bbfa64f04acc0ac5ef5bec61f2e2edef7735ef1c1c94ad83",
+      "74542a87b2e366b5da3db2e02fa2cf81459c23b2e38cd349a69f4391703b1b6f",
+      "7ec863579a1c18c83ffb107d48e46631f9cc999d16c5005405e1d3da3f8c0ff3",
+      "7ffbef9b96e0bc82a177b533fbb7c5bbad5ff200e983b3268a29ce99672d68db",
+      "808be168e279c184b487929745fcbe3870aab631f8c22d24155cb93dc96d282a",
+      "852a4498b8b67db0c3d03d2e5448442d9c46d4e3d9d3f8dca8bd3cabdfedb523",
+      "85bd0ba6223517dbfcfc4b1f94a6807b30432610dbf7469f15585559f76c1910",
+      "85c9fef584ee4b11e26de8a10d90edca4fb786c7e3441c6f6977a28bdba6ef28",
+      "8a6bc0b87b4468d47cbf2504f6ffce5a8a7997e09e6eb861b62dfbec11543f03",
+      "90080a29b6ef357209a1e3312edad7d719d63ba2fab5c7cd69878be936ebcf78",
+      "90c0d178e8c53b0feeb0b58814bfdc8c227b5f9955b0f7d575af00bd9462c8bc",
+      "9eac1c9fc9f657832101c143e119455a21b8501624b1bb83b8407a1824f68cc9",
+      "9ee7133bb0ab1cd377203d0464ba8ffe1f036e333ade68b6702aebb90af68c4b",
+      "a1e388726de22c1df76fcf6c2fa75dd954364a910fea9f9dc98605be4158f00f",
+      "a3d2906096b1d176191a4f32ac2300dc69d111ac579ca34dbc92af4298557718",
+      "a85fdc19fe4cc59fc7b4e5093e5d7a34e89cfe30a970e559b049e9a8afca592e",
+      "b1315bfa7ada0e94dc04d7e5e8fd6a845a8454c68f4c2f3a8b8f79a3e6468285",
+      "b1e2306223cfa2eaea2eb05d8fa63c8ec47d81093f3505c77b4720d78de31656",
+      "b5a6896bcc94c9df9cb046000a9644d5912a852dbfb8512129f6ac16b55a5b58",
+      "c25aadee9dcc4aa8c88c70fe05b1f16db5eb2cf71c3d9ed781e38ec47257e340",
+      "cfd2ac2fefeda8731a28c866e7a881ce0d833926c174977ba53799b385890fda",
+      "dbf4d76b9db44dd240ef142c8281a07e4cc5bb5fa51f4920d42511be8c1c890c",
+      "df6cbe6d7b321839b8be1128e8de820a72353f92147d806fc072c80516b8ac04",
+      "e1873e6be7de7f1c80d376763f8e7dc91d9dd347d3c28e699c643428807b3bf7",
+      "f02fd831317abe3dcb49b98d1127cf16055687a5b3013c882e859c67c6512359",
+      "f98060ba4e3f315eb45f8b65c7ce87b6c1b727d3d8b7e83e28d7b10232fe880f",
+      "fd3788d712e59ff7e85e5f4a9a2b342ac9dba29e17c7fa4e98ab32a519b8ccbe"
+    ]
+  },
+  "test_seal": {
+    "note": "The Test artifact itself was not opened during preflight.",
+    "rows": 200,
+    "sealed": true,
+    "sha256": "54dca696b6524702d3a6e0f81796c71bd50aea653367ccdfae14cf7a51486413"
+  },
+  "token_lengths": {
+    "challenge": {
+      "max": 151,
+      "median": 115,
+      "min": 83,
+      "over_max_seq_length": 0,
+      "p95": 138
+    },
+    "train": {
+      "max": 139,
+      "median": 95,
+      "min": 57,
+      "over_max_seq_length": 0,
+      "p95": 122
+    },
+    "validation": {
+      "max": 142,
+      "median": 96,
+      "min": 67,
+      "over_max_seq_length": 0,
+      "p95": 123
+    }
+  }
+}

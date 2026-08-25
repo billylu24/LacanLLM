@@ -1,0 +1,101 @@
+{
+  "adapter_dir": "/home/giaok/PycharmProjects/LacanLLM/artifacts/training/qlora_v1/trials/trial-011/adapter",
+  "best_checkpoint": "/home/giaok/PycharmProjects/LacanLLM/artifacts/training/qlora_v1/trials/trial-011/checkpoints/checkpoint-126",
+  "contract": {
+    "config_hash": "1d99078fa88cfe7d176410d2eb620b60da813132ce1d853f54ef396c60304638",
+    "data_hashes": {
+      "challenge": "e83eed4c3a6343d34b217947125bfaf1e20ef51f13a5b7173868e3bbe8a8c8e5",
+      "train": "46e8ba42866864a57d831022c1c7ec5305517397f59dcf08bb1e6c913c513c77",
+      "validation": "f36f9a52f8fea547f20ffce0e06bb8c714ad685aed7aaefdf542c3d565ad67f5"
+    },
+    "experiment_version": "qlora_v1",
+    "fixed_training": {
+      "gradient_checkpointing": "unsloth",
+      "max_epochs": 4,
+      "max_grad_norm": 1.0,
+      "max_seq_length": 192,
+      "optimizer": "adamw_8bit",
+      "per_device_eval_batch_size": 1,
+      "per_device_train_batch_size": 1,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "thinking": false
+    },
+    "model_id": "google/gemma-4-E2B-it",
+    "params": {
+      "alpha": 64,
+      "alpha_ratio": 1,
+      "dropout": 0.05,
+      "effective_batch_size": 8,
+      "learning_rate": 0.00011712307622140195,
+      "rank": 64,
+      "scheduler": "cosine",
+      "warmup_ratio": 0.1,
+      "weight_decay": 0.05
+    },
+    "quantization": {
+      "compute_dtype": "bfloat16",
+      "double_quant": true,
+      "load_in_4bit": true,
+      "quant_type": "nf4"
+    },
+    "seed": 3407
+  },
+  "elapsed_seconds": 692.8800876110035,
+  "environment": {
+    "cuda_available": true,
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_capability": [
+      12,
+      0
+    ],
+    "packages": {
+      "bitsandbytes": "0.50.1",
+      "datasets": "4.3.0",
+      "optuna": "4.9.0",
+      "peft": "0.20.0",
+      "torch": "2.11.0",
+      "transformers": "5.5.0",
+      "trl": "0.24.0",
+      "unsloth": "2026.8.19"
+    },
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+    "python": "3.12.14"
+  },
+  "eval_metrics": {
+    "epoch": 4.0,
+    "eval_loss": 2.591059684753418,
+    "eval_runtime": 12.3248,
+    "eval_samples_per_second": 16.227,
+    "eval_steps_per_second": 16.227
+  },
+  "execution_contract": {
+    "benchmark_mode": false,
+    "max_steps": -1,
+    "row_limit": null
+  },
+  "optimized_dropout_path": false,
+  "peak_allocated_bytes": 9298548224,
+  "peak_reserved_bytes": 9384755200,
+  "run_hash": "70a8af0b7833a2aa5a9f035c5e91435641e35c5a0fc15ba7abe5e3d57236b168",
+  "status": "completed",
+  "train_metrics": {
+    "epoch": 4.0,
+    "total_flos": 2833302704154624.0,
+    "train_loss": 1.995212790984956,
+    "train_runtime": 591.4794,
+    "train_samples_per_second": 3.381,
+    "train_steps_per_second": 0.426
+  },
+  "train_rows": 500,
+  "trial": 11,
+  "validation_rows": 200
+}

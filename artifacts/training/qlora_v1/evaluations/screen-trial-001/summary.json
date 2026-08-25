@@ -1,0 +1,54 @@
+{
+  "adapter_dir": "artifacts/training/qlora_v1/trials/trial-001/adapter",
+  "by_type": {
+    "clinical_application": {
+      "cases": 4,
+      "paired_score": 0.5
+    },
+    "comparison": {
+      "cases": 3,
+      "paired_score": 0.5
+    },
+    "concept_confusion": {
+      "cases": 5,
+      "paired_score": 0.8
+    },
+    "cross_concept": {
+      "cases": 7,
+      "paired_score": 0.5714285714285714
+    },
+    "definition": {
+      "cases": 3,
+      "paired_score": 0.5
+    },
+    "explanation": {
+      "cases": 3,
+      "paired_score": 0.6666666666666666
+    },
+    "textual_interpretation": {
+      "cases": 4,
+      "paired_score": 0.625
+    },
+    "unanswerable": {
+      "cases": 5,
+      "paired_score": 0.5
+    }
+  },
+  "candidate_contradiction_rate": 0.0,
+  "candidate_overclaim_rate": 0.058823529411764705,
+  "cases": 54,
+  "challenge_baseline_accuracy": 0.5294117647058824,
+  "challenge_candidate_accuracy": 0.11764705882352941,
+  "consensus_cases": 34,
+  "consensus_rate": 0.6296296296296297,
+  "generation_success_rate": 1.0,
+  "losses": 1,
+  "name": "screen-trial-001",
+  "paired_score": 0.5882352941176471,
+  "paired_score_ci95": [
+    0.5147058823529411,
+    0.6617647058823529
+  ],
+  "ties": 26,
+  "wins": 7
+}

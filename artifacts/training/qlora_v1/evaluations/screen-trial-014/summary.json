@@ -1,0 +1,54 @@
+{
+  "adapter_dir": "/home/giaok/PycharmProjects/LacanLLM/artifacts/training/qlora_v1/trials/trial-014/adapter",
+  "by_type": {
+    "clinical_application": {
+      "cases": 3,
+      "paired_score": 0.5
+    },
+    "comparison": {
+      "cases": 2,
+      "paired_score": 0.75
+    },
+    "concept_confusion": {
+      "cases": 1,
+      "paired_score": 0.5
+    },
+    "cross_concept": {
+      "cases": 7,
+      "paired_score": 0.2857142857142857
+    },
+    "definition": {
+      "cases": 2,
+      "paired_score": 0.25
+    },
+    "explanation": {
+      "cases": 2,
+      "paired_score": 0.75
+    },
+    "textual_interpretation": {
+      "cases": 4,
+      "paired_score": 0.625
+    },
+    "unanswerable": {
+      "cases": 5,
+      "paired_score": 0.4
+    }
+  },
+  "candidate_contradiction_rate": 0.0,
+  "candidate_overclaim_rate": 0.23076923076923078,
+  "cases": 54,
+  "challenge_baseline_accuracy": 0.38461538461538464,
+  "challenge_candidate_accuracy": 0.46153846153846156,
+  "consensus_cases": 26,
+  "consensus_rate": 0.48148148148148145,
+  "generation_success_rate": 1.0,
+  "losses": 8,
+  "name": "screen-trial-014",
+  "paired_score": 0.46153846153846156,
+  "paired_score_ci95": [
+    0.3076923076923077,
+    0.5769230769230769
+  ],
+  "ties": 12,
+  "wins": 6
+}

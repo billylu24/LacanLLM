@@ -1,0 +1,95 @@
+{
+  "adapter_dir": "/home/giaok/PycharmProjects/LacanLLM/artifacts/training/qlora_v1/trials/trial-900/adapter",
+  "best_checkpoint": null,
+  "contract": {
+    "config_hash": "1d99078fa88cfe7d176410d2eb620b60da813132ce1d853f54ef396c60304638",
+    "data_hashes": {
+      "challenge": "e83eed4c3a6343d34b217947125bfaf1e20ef51f13a5b7173868e3bbe8a8c8e5",
+      "train": "46e8ba42866864a57d831022c1c7ec5305517397f59dcf08bb1e6c913c513c77",
+      "validation": "f36f9a52f8fea547f20ffce0e06bb8c714ad685aed7aaefdf542c3d565ad67f5"
+    },
+    "experiment_version": "qlora_v1",
+    "fixed_training": {
+      "gradient_checkpointing": "unsloth",
+      "max_epochs": 4,
+      "max_grad_norm": 1.0,
+      "max_seq_length": 192,
+      "optimizer": "adamw_8bit",
+      "per_device_eval_batch_size": 1,
+      "per_device_train_batch_size": 1,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "thinking": false
+    },
+    "model_id": "google/gemma-4-E2B-it",
+    "params": {
+      "alpha": 32,
+      "alpha_ratio": 2,
+      "dropout": 0.0,
+      "effective_batch_size": 8,
+      "learning_rate": 0.0001,
+      "rank": 16,
+      "scheduler": "linear",
+      "warmup_ratio": 0.0,
+      "weight_decay": 0.0
+    },
+    "quantization": {
+      "compute_dtype": "bfloat16",
+      "double_quant": true,
+      "load_in_4bit": true,
+      "quant_type": "nf4"
+    },
+    "seed": 3407
+  },
+  "elapsed_seconds": 301.7676507520009,
+  "environment": {
+    "cuda_available": true,
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_capability": [
+      12,
+      0
+    ],
+    "packages": {
+      "bitsandbytes": "0.50.1",
+      "datasets": "4.3.0",
+      "optuna": "4.9.0",
+      "peft": "0.20.0",
+      "torch": "2.11.0",
+      "transformers": "5.5.0",
+      "trl": "0.24.0",
+      "unsloth": "2026.8.19"
+    },
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+    "python": "3.12.14"
+  },
+  "eval_metrics": {},
+  "execution_contract": {
+    "benchmark_mode": true,
+    "max_steps": 120,
+    "row_limit": 100
+  },
+  "optimized_dropout_path": true,
+  "peak_allocated_bytes": 8553814016,
+  "peak_reserved_bytes": 8585740288,
+  "run_hash": "27ff93a2c28fd824957b6f9b78412b5218f031076d374866cd5c020544d30f52",
+  "status": "completed",
+  "train_metrics": {
+    "epoch": 9.24,
+    "total_flos": 1158020831733696.0,
+    "train_loss": 2.025254621108373,
+    "train_runtime": 245.9476,
+    "train_samples_per_second": 3.903,
+    "train_steps_per_second": 0.488
+  },
+  "train_rows": 100,
+  "trial": 900,
+  "validation_rows": 100
+}
