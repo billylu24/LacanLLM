@@ -9941,3 +9941,67 @@ CLI events are appended below. Do not manually edit generated event blocks.
   "timestamp": "2026-08-23T01:55:21.861219+00:00"
 }
 ```
+
+### 2026-08-23T08:23:12.546553+00:00 — `status` — completed
+
+```json
+{
+  "command": "status",
+  "config_hash": "e82fe780b55a748de6a243e0c05d3620bbd62345e02f5c0b3e9b8fee17ff895c",
+  "payload": {
+    "clean_corpus_rows": 32028,
+    "config_hash": "e82fe780b55a748de6a243e0c05d3620bbd62345e02f5c0b3e9b8fee17ff895c",
+    "pipeline_version": "pipeline_v2",
+    "split_manifest_ready": true,
+    "splits": {
+      "challenge": {
+        "consensus": 79,
+        "deduplicated": 282,
+        "final": 70,
+        "generated": 364,
+        "hard_filtered": 282,
+        "judge_adversarial": 237,
+        "judge_rubric": 237,
+        "queue": 364,
+        "target": 100
+      },
+      "test": {
+        "consensus": 283,
+        "deduplicated": 465,
+        "final": 200,
+        "generated": 629,
+        "hard_filtered": 474,
+        "judge_adversarial": 442,
+        "judge_rubric": 442,
+        "queue": 629,
+        "target": 250
+      },
+      "train": {
+        "consensus": 573,
+        "deduplicated": 1062,
+        "final": 500,
+        "generated": 1421,
+        "hard_filtered": 1103,
+        "judge_adversarial": 991,
+        "judge_rubric": 991,
+        "queue": 1421,
+        "target": 500
+      },
+      "validation": {
+        "consensus": 289,
+        "deduplicated": 445,
+        "final": 200,
+        "generated": 581,
+        "hard_filtered": 453,
+        "judge_adversarial": 435,
+        "judge_rubric": 435,
+        "queue": 581,
+        "target": 250
+      }
+    }
+  },
+  "pipeline_version": "pipeline_v2",
+  "status": "completed",
+  "timestamp": "2026-08-23T08:23:12.546553+00:00"
+}
+```

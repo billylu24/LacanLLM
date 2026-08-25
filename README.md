@@ -34,6 +34,27 @@ that two files do not originate from the same underlying work.
 
 ## Commands
 
+Create and activate the Miniconda environment from the repository root:
+
+```bash
+conda env create -f environment.yml
+conda activate lacanllm
+python -m pytest -q
+python -m lacanllm.data.pipeline_v2 status
+```
+
+If the environment already exists, synchronize it after dependency changes with
+`conda env update -f environment.yml --prune`.
+
+On machines where Conda blocks configured Anaconda default channels pending
+Terms-of-Service acceptance, use the conda-forge-only equivalent:
+
+```bash
+conda create --name lacanllm --override-channels --channel conda-forge python=3.12 'pip>=25' -y
+conda run --name lacanllm python -m pip install -e '.[dev,models]'
+conda activate lacanllm
+```
+
 ```powershell
 # Deterministic preparation
 .\.venv\Scripts\python.exe -m lacanllm.data.pipeline_v2 clean
@@ -61,6 +82,46 @@ that two files do not originate from the same underlying work.
 Generation and judging use local CUDA. Set `HF_TOKEN` if Hugging Face requires
 authentication for model retrieval. E4B uses 4-bit NF4 and `device_map=auto`,
 which permits CPU offload rather than silently replacing the configured judge.
+
+## QLoRA experiments
+
+Training uses an isolated, pinned Unsloth environment so it does not replace
+the newer Torch and Transformers versions used by the data pipeline:
+
+```bash
+conda env create -f environment-unsloth.yml
+conda activate lacanllm-unsloth
+lacanllm-experiments preflight
+lacanllm-experiments smoke
+```
+
+If configured Anaconda channels are blocked by Terms-of-Service prompts, create
+the same environment through conda-forge and then install the locked packages:
+
+```bash
+conda create --name lacanllm-unsloth --override-channels --channel conda-forge python=3.12 'pip>=25' -y
+conda run --name lacanllm-unsloth python -m pip install -e '.[dev,models,training]' \
+  'unsloth==2026.8.19' 'torch==2.11.0' 'torchvision==0.26.0' \
+  'transformers==5.5.0' 'trl==0.24.0' 'peft==0.20.0' 'datasets==4.3.0'
+```
+
+Run backend measurements in separate processes, then launch the resumable
+16-trial search. The search covers LoRA rank/alpha/dropout, effective batch,
+warmup, scheduler, weight decay, and learning rate:
+
+```bash
+lacanllm-experiments benchmark-backend --backend native
+lacanllm-experiments benchmark-backend --backend unsloth
+lacanllm-experiments search --trials 16
+lacanllm-experiments status
+lacanllm-experiments evaluate-top --count 3
+lacanllm-experiments evaluate-test
+```
+
+`evaluate-top` locks the winner using Validation and Challenge. Only then can
+`evaluate-test` verify and open the sealed Test artifact, and a completion
+marker prevents a second Test run. The full protocol and selection rules are in
+[`docs/QLORA_UNSLOTH_EXPERIMENT_PLAN.md`](docs/QLORA_UNSLOTH_EXPERIMENT_PLAN.md).
 
 ## Reproducibility and documentation
 

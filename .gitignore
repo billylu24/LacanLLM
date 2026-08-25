@@ -14,6 +14,10 @@ data/reports/rejections.jsonl
 data/reports/last_build_output.txt
 reports/pipeline_v2/runtime/
 
+# Local training/search artifacts and Optuna databases.
+artifacts/training/
+unsloth_compiled_cache/
+
 # Large legacy runtime outputs were intentionally archived locally.
 legacy/outputs/
 legacy/experiments/logs/

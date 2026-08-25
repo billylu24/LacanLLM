@@ -1,0 +1,74 @@
+{
+  "experiment_version": "qlora_v1",
+  "seed": 3407,
+  "model_id": "google/gemma-4-E2B-it",
+  "judge_model_id": "google/gemma-4-E4B-it",
+  "paths": {
+    "train": "data/processed/sft_v3/train.jsonl",
+    "validation": "data/processed/benchmark_v2/validation.jsonl",
+    "test": "data/processed/benchmark_v2/test.jsonl",
+    "challenge": "data/processed/benchmark_v2/challenge.jsonl",
+    "test_seal": "data/manifests/pipeline_v2/test_seal.json",
+    "artifact_root": "artifacts/training/qlora_v1"
+  },
+  "quantization": {
+    "load_in_4bit": true,
+    "quant_type": "nf4",
+    "double_quant": true,
+    "compute_dtype": "bfloat16"
+  },
+  "fixed_training": {
+    "max_seq_length": 192,
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "max_epochs": 4,
+    "optimizer": "adamw_8bit",
+    "max_grad_norm": 1.0,
+    "gradient_checkpointing": "unsloth",
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "thinking": false
+  },
+  "search": {
+    "trials": 16,
+    "screen_validation_per_type": 6,
+    "screen_challenge_per_type": 6,
+    "top_full_evaluation": 3,
+    "challenge_regression_tolerance": 0.05,
+    "generation_success_floor": 0.99,
+    "space": {
+      "learning_rate": [0.00005, 0.0003],
+      "rank": [8, 16, 32, 64],
+      "alpha_ratio": [1, 2],
+      "dropout": [0.0, 0.05],
+      "effective_batch_size": [4, 8, 16],
+      "warmup_ratio": [0.0, 0.03, 0.05, 0.1],
+      "scheduler": ["cosine", "linear"],
+      "weight_decay": [0.0, 0.01, 0.05]
+    },
+    "anchors": [
+      {"learning_rate": 0.0001, "rank": 16, "alpha_ratio": 2, "dropout": 0.0, "effective_batch_size": 8, "warmup_ratio": 0.05, "scheduler": "cosine", "weight_decay": 0.01},
+      {"learning_rate": 0.00005, "rank": 16, "alpha_ratio": 2, "dropout": 0.0, "effective_batch_size": 8, "warmup_ratio": 0.05, "scheduler": "cosine", "weight_decay": 0.01},
+      {"learning_rate": 0.0002, "rank": 16, "alpha_ratio": 2, "dropout": 0.0, "effective_batch_size": 8, "warmup_ratio": 0.05, "scheduler": "cosine", "weight_decay": 0.01},
+      {"learning_rate": 0.0001, "rank": 8, "alpha_ratio": 2, "dropout": 0.0, "effective_batch_size": 8, "warmup_ratio": 0.05, "scheduler": "cosine", "weight_decay": 0.01},
+      {"learning_rate": 0.0001, "rank": 32, "alpha_ratio": 2, "dropout": 0.0, "effective_batch_size": 8, "warmup_ratio": 0.05, "scheduler": "cosine", "weight_decay": 0.01},
+      {"learning_rate": 0.0001, "rank": 16, "alpha_ratio": 2, "dropout": 0.05, "effective_batch_size": 8, "warmup_ratio": 0.05, "scheduler": "cosine", "weight_decay": 0.01}
+    ]
+  },
+  "evaluation": {
+    "max_new_tokens": 192,
+    "temperature": 0.0,
+    "judge_max_new_tokens": 420,
+    "judge_temperature": 0.0,
+    "judge_min_consensus_rate": 0.8,
+    "bootstrap_samples": 2000
+  },
+  "benchmark": {
+    "rows": 100,
+    "warmup_micro_steps": 20,
+    "measure_micro_steps": 100,
+    "rank": 16,
+    "alpha": 32,
+    "learning_rate": 0.0001,
+    "effective_batch_size": 8
+  }
+}
