@@ -1,0 +1,3 @@
+# GPU production runtime. The package metadata in pyproject.toml is the
+# canonical dependency list; editable installation also exposes the CLI.
+-e .
