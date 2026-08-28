@@ -4,7 +4,7 @@ LacanLLM is an auditable data, training, and evaluation project. The active
 implementation is the fully automated Pipeline v2. Previous code, generated
 data, adapters, and experiment artifacts remain recoverable under `legacy/`;
 the immediately preceding rule-only dataset is under
-`legacy/pipeline_v1_20260819/`.
+`legacy/pipeline_v1_20260819/`
 
 ## Active data pipeline
 
