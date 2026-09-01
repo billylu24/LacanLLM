@@ -1,0 +1,65 @@
+{
+  "schema_version": "qlora-training-v1",
+  "experiment_name": "r16_lr1e4",
+  "output_dir": "artifacts/experiments/r16_lr1e4",
+  "seed": 3407,
+  "model": {
+    "model_id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "expected_model_type": "qwen3_5",
+    "expected_architecture": "Qwen3_5ForConditionalGeneration",
+    "parameter_count": 27781427952,
+    "dtype": "bfloat16"
+  },
+  "dataset": {
+    "version": "pipeline-v3.1.0-production",
+    "train_file": "data/pipeline_v3/production/08_select/train.jsonl",
+    "validation_file": "data/pipeline_v3/production/08_select/validation.jsonl",
+    "expected_train_rows": 2000,
+    "expected_validation_rows": 250,
+    "expected_train_sha256": "d8ba14de311d0420d2daa15df0a848cfa62105a3dac4e9ae6475da57685a3442",
+    "expected_validation_sha256": "d12be94757cc2707cd313b1c137b105db3c2aba067bd6647f56523ab57780a13"
+  },
+  "quantization": {"load_in_4bit": true, "quant_type": "nf4", "double_quant": true},
+  "lora": {
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.0,
+    "target_scope": "model.language_model.layers.",
+    "target_modules": [
+      "q_proj", "k_proj", "v_proj", "o_proj",
+      "in_proj_a", "in_proj_b", "in_proj_qkv", "in_proj_z", "out_proj",
+      "gate_proj", "up_proj", "down_proj"
+    ],
+    "expected_target_counts": {
+      "q_proj": 16, "k_proj": 16, "v_proj": 16, "o_proj": 16,
+      "in_proj_a": 48, "in_proj_b": 48, "in_proj_qkv": 48, "in_proj_z": 48, "out_proj": 48,
+      "gate_proj": 64, "up_proj": 64, "down_proj": 64
+    }
+  },
+  "training": {
+    "max_seq_length": 1024,
+    "epochs": 3,
+    "max_steps": -1,
+    "max_train_samples": null,
+    "max_eval_samples": null,
+    "learning_rate": 0.0001,
+    "lr_scheduler_type": "linear",
+    "warmup_steps": 20,
+    "weight_decay": 0.0,
+    "max_grad_norm": 0.3,
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "gradient_checkpointing": true,
+    "optimizer": "paged_adamw_8bit",
+    "tf32": true,
+    "eval_steps": 125,
+    "save_steps": 125,
+    "save_total_limit": 3,
+    "load_best_model_at_end": true,
+    "logging_steps": 1,
+    "report_to": "none",
+    "full_determinism": false
+  }
+}

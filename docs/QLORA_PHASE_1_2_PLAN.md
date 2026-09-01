@@ -186,10 +186,9 @@ for this smoke, so Phase 1 does not add those compilation-heavy dependencies.
 
 Do not combine these gates or inspect Test early:
 
-1. **Phase 3 — 20–50 step smoke training:** copy the smoke config to a new `artifacts/smoke/` run, use roughly
-   32 optimizer steps and enough training rows for the configured effective batch. Confirm a decreasing but finite
-   loss curve, multiple checkpoints, resume from a genuinely incomplete checkpoint, stable peak VRAM, and adapter
-   reload. This is an engineering run, not a model-selection result.
+1. **Phase 3 — completed:** the 32-step smoke passed with decreasing finite loss, checkpoints at 8/16/24/32,
+   recovery from an intentionally interrupted `checkpoint-8`, 27.19 GiB peak VRAM, and successful adapter reload.
+   See `docs/QLORA_PHASE_3_REPORT.md`. This is engineering evidence, not a model-selection result.
 2. **Phase 4 — Base validation baseline:** implement the shared evaluation/generation entry point, freeze a small
    fixed Validation QA subset and generation settings, and record base completion-only Validation loss and answers.
    The base row must use the same prompt/template and decoding settings as every adapter.

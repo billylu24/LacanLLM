@@ -197,3 +197,10 @@ python scripts/train_qlora.py \
 Phase 2 命令与验收方法见
 [`docs/QLORA_PHASE_1_2_PLAN.md`](docs/QLORA_PHASE_1_2_PLAN.md)。Test 封存哈希见
 `data/pipeline_v3/production/09_seal/test_seal.json`。
+
+32-step Phase 3 已验证持续训练、未完成 checkpoint 恢复、多次 Validation、显存记录和
+adapter 重新加载；结果与限制见
+[`docs/QLORA_PHASE_3_REPORT.md`](docs/QLORA_PHASE_3_REPORT.md)。Phase 4 Base baseline 使用完整
+250 条 Validation，得到 completion-only loss `0.67864`；固定 16 条生成样本的 mean token-F1
+为 `0.56849`。Phase 5 使用 `scripts/run_rank_queue.py` 串行运行 r=8/16/32，并在每组结束后
+生成同口径 Validation 对比。Test 仍保持封存。

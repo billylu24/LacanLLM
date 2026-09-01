@@ -138,6 +138,25 @@ def checkpoint_global_step(checkpoint: Path) -> int:
     return int(state["global_step"])
 
 
+def summarize_training_losses(log_history: list[dict[str, Any]], window_size: int = 8) -> dict[str, Any]:
+    entries = [entry for entry in log_history if "loss" in entry and "grad_norm" in entry]
+    if not entries:
+        raise RuntimeError("Trainer log history contains no per-step training losses")
+    losses = [float(entry["loss"]) for entry in entries]
+    resolved_window = min(window_size, len(losses))
+    return {
+        "logged_steps": len(losses),
+        "first_step": int(entries[0]["step"]),
+        "last_step": int(entries[-1]["step"]),
+        "mean": sum(losses) / len(losses),
+        "minimum": min(losses),
+        "maximum": max(losses),
+        "window_size": resolved_window,
+        "first_window_mean": sum(losses[:resolved_window]) / resolved_window,
+        "last_window_mean": sum(losses[-resolved_window:]) / resolved_window,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=Path("configs/training/qwen3_8_27b_qlora.json"))
@@ -340,6 +359,7 @@ def main() -> None:
     trainer.save_model(adapter_dir)
     tokenizer.save_pretrained(adapter_dir)
     trainer.save_state()
+    training_loss_summary = summarize_training_losses(trainer.state.log_history)
     (output_dir / "log_history.json").write_text(
         json.dumps(trainer.state.log_history, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -366,6 +386,7 @@ def main() -> None:
         "wall_clock_seconds": elapsed,
         "end_to_end_seconds": time.monotonic() - process_started,
         "train_metrics": train_result.metrics,
+        "training_loss_summary": training_loss_summary,
         "validation_metrics": eval_metrics,
         "resume_from_checkpoint": resume_checkpoint,
         "software": {

@@ -91,3 +91,40 @@ def test_checkpoint_global_step_reads_saved_state(tmp_path):
     checkpoint.mkdir()
     (checkpoint / "trainer_state.json").write_text('{"global_step": 7}')
     assert training.checkpoint_global_step(checkpoint) == 7
+
+
+def test_training_loss_summary_uses_all_logged_steps_across_resume():
+    training = load_training_module()
+    history = [
+        {"step": 1, "loss": 0.8, "grad_norm": 1.0},
+        {"step": 2, "eval_loss": 0.7},
+        {"step": 2, "loss": 0.4, "grad_norm": 0.9},
+        {"step": 3, "loss": 0.2, "grad_norm": 0.8},
+    ]
+    summary = training.summarize_training_losses(history, window_size=2)
+    assert summary == {
+        "logged_steps": 3,
+        "first_step": 1,
+        "last_step": 3,
+        "mean": pytest.approx(1.4 / 3),
+        "minimum": 0.2,
+        "maximum": 0.8,
+        "window_size": 2,
+        "first_window_mean": pytest.approx(0.6),
+        "last_window_mean": pytest.approx(0.3),
+    }
+
+
+def test_validation_token_f1_is_transparent_and_bounded():
+    path = Path(__file__).parents[1] / "scripts" / "evaluate_validation.py"
+    spec = importlib.util.spec_from_file_location("evaluate_validation", path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.path.insert(0, str(path.parent))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.pop(0)
+    assert module.token_f1("The symbolic order.", "symbolic order") == pytest.approx(0.8)
+    assert module.token_f1("unrelated", "symbolic order") == 0.0
+    assert module.token_f1("", "") == 1.0

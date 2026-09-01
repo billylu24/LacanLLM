@@ -1,0 +1,26 @@
+{
+  "schema_version": "validation-evaluation-v1",
+  "evaluation_name": "base_validation",
+  "output_dir": "artifacts/evaluation/base_validation",
+  "adapter_path": null,
+  "seed": 3407,
+  "model": {
+    "model_id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "expected_model_type": "qwen3_5",
+    "expected_architecture": "Qwen3_5ForConditionalGeneration",
+    "dtype": "bfloat16"
+  },
+  "dataset": {
+    "version": "pipeline-v3.1.0-production",
+    "validation_file": "data/pipeline_v3/production/08_select/validation.jsonl",
+    "expected_validation_rows": 250,
+    "expected_validation_sha256": "d12be94757cc2707cd313b1c137b105db3c2aba067bd6647f56523ab57780a13"
+  },
+  "quantization": {"load_in_4bit": true, "quant_type": "nf4", "double_quant": true},
+  "evaluation": {
+    "max_seq_length": 1024,
+    "max_new_tokens": 256,
+    "generation_indices": [0, 17, 33, 50, 66, 83, 100, 116, 133, 149, 166, 183, 199, 216, 232, 249]
+  }
+}
