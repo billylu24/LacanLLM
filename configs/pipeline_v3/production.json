@@ -8,9 +8,9 @@
   "work_root": "data/pipeline_v3/production",
   "generator": {
     "backend": "transformers",
-    "family": "gemma4",
-    "model_id": "google/gemma-4-12B-it",
-    "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+    "family": "qwen3_8",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
     "prompt_version": "generate-v3.3",
     "temperature": 0.2,
     "top_p": 0.9,
@@ -19,9 +19,9 @@
   },
   "judge": {
     "backend": "transformers",
-    "family": "gemma4",
-    "model_id": "google/gemma-4-12B-it",
-    "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+    "family": "qwen3_8",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
     "prompt_version": "judge-v3.2",
     "temperature": 0.0,
     "top_p": 1.0,
@@ -34,8 +34,8 @@
     "double_quant": true,
     "compute_dtype": "bfloat16",
     "device_map": "auto",
-    "max_gpu_memory": "10GiB",
-    "max_cpu_memory": "12GiB"
+    "max_gpu_memory": "28GiB",
+    "max_cpu_memory": "64GiB"
   },
   "queue": {"count": 10000, "single_count": 8000, "pair_count": 2000, "max_context_chars": 3000, "max_pair_distance": 10},
   "targets": {"Train": 2000, "Validation": 250, "Test": 250},

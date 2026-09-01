@@ -1,0 +1,14 @@
+{
+  "access_policy": "evaluation prohibited until winner_lock.json exists",
+  "config_hash": "d6e2867fe14eb8d3738ef76e7df0f0fa419f8789f8822563925eb1edff885c78",
+  "generator_model_id": "Qwen/Qwen3.8-27B",
+  "generator_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "generator_prompt_version": "generate-v3.3",
+  "judge_model_id": "Qwen/Qwen3.8-27B",
+  "judge_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "judge_prompt_version": "judge-v3.2",
+  "pipeline_version": "3.1.0",
+  "schema_version": "pipeline-v3-config-2",
+  "test_rows": 250,
+  "test_sha256": "9dae4007e6c1c8395f7a790f50124098d2901ff71ab4d54d1d73fb29a13c6a14"
+}

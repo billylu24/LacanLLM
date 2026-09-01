@@ -1,0 +1,14 @@
+{
+  "artifact_sha256": "7810624589cb7239a807bd24d3d083ee25442937a93b09d2e8298608f5464ebf",
+  "config_hash": "d6e2867fe14eb8d3738ef76e7df0f0fa419f8789f8822563925eb1edff885c78",
+  "generator_model_id": "Qwen/Qwen3.8-27B",
+  "generator_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "generator_prompt_version": "generate-v3.3",
+  "judge_model_id": "Qwen/Qwen3.8-27B",
+  "judge_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "judge_prompt_version": "judge-v3.2",
+  "passing": 9997,
+  "pipeline_version": "3.1.0",
+  "rows": 10000,
+  "schema_version": "pipeline-v3-config-2"
+}

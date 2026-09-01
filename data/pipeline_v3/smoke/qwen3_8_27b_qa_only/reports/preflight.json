@@ -1,0 +1,30 @@
+{
+  "config_hash": "79dbb3d9ab6de48e3098e3cffd1fbf44e0d77d83a580d81e0cf836ac00903020",
+  "cuda_available": true,
+  "generator_model_id": "Qwen/Qwen3.8-27B",
+  "generator_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "generator_prompt_version": "generate-v3.3",
+  "gpu": "NVIDIA RTX PRO 4500 Blackwell Server Edition",
+  "gpu_memory_bytes": 33687797760,
+  "judge_model_id": "Qwen/Qwen3.8-27B",
+  "judge_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "judge_prompt_version": "judge-v3.2",
+  "models": {
+    "generator": {
+      "model_id": "Qwen/Qwen3.8-27B",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    },
+    "judge": {
+      "model_id": "Qwen/Qwen3.8-27B",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    }
+  },
+  "pipeline_version": "3.1.0",
+  "profile": "smoke",
+  "python": "3.11.13",
+  "schema_version": "pipeline-v3-config-2",
+  "source_rows": 32028,
+  "source_sha256": "721050bef287bdd68846bfb0842ca4b917b56c37fbe45b8926f629f0b92744da",
+  "torch_version": "2.13.0+cu130",
+  "transformers_version": "5.16.1"
+}

@@ -1,0 +1,17 @@
+{
+  "model_id": "Qwen/Qwen3.8-27B",
+  "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "train_file": "data/pipeline_v3/production/08_select/train.jsonl",
+  "validation_file": "data/pipeline_v3/production/08_select/validation.jsonl",
+  "output_dir": "artifacts/training/qwen3_8_27b_qlora",
+  "seed": 3407,
+  "max_seq_length": 2048,
+  "epochs": 3,
+  "learning_rate": 0.0001,
+  "per_device_train_batch_size": 1,
+  "per_device_eval_batch_size": 1,
+  "gradient_accumulation_steps": 8,
+  "lora_rank": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.0
+}

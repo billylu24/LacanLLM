@@ -1,0 +1,70 @@
+{
+  "artifact_sha256": "6a9eae064bfd0e6c4ad27b65840b1cfeb9877a97acb3b657273c4c82a2ec3878",
+  "config_hash": "d6e2867fe14eb8d3738ef76e7df0f0fa419f8789f8822563925eb1edff885c78",
+  "generator_model_id": "Qwen/Qwen3.8-27B",
+  "generator_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "generator_prompt_version": "generate-v3.3",
+  "judge_model_id": "Qwen/Qwen3.8-27B",
+  "judge_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "judge_prompt_version": "judge-v3.2",
+  "pipeline_version": "3.1.0",
+  "rows": {
+    "Test": 3203,
+    "Train": 25622,
+    "Validation": 3203
+  },
+  "schema_version": "pipeline-v3-config-2",
+  "sources": {
+    "Test": [
+      "lacan_text_002.txt",
+      "lacan_text_005.txt",
+      "lacan_text_011.txt",
+      "lacan_text_014.txt",
+      "lacan_text_022.txt"
+    ],
+    "Train": [
+      "lacan_text_000.txt",
+      "lacan_text_003.txt",
+      "lacan_text_004.txt",
+      "lacan_text_006.txt",
+      "lacan_text_007.txt",
+      "lacan_text_008.txt",
+      "lacan_text_009.txt",
+      "lacan_text_010.txt",
+      "lacan_text_013.txt",
+      "lacan_text_015.txt",
+      "lacan_text_016.txt",
+      "lacan_text_017.txt",
+      "lacan_text_018.txt",
+      "lacan_text_019.txt",
+      "lacan_text_021.txt",
+      "lacan_text_023.txt",
+      "lacan_text_025.txt",
+      "lacan_text_026.txt",
+      "lacan_text_027.txt",
+      "lacan_text_028.txt",
+      "lacan_text_029.txt",
+      "lacan_text_030.txt",
+      "lacan_text_031.txt",
+      "lacan_text_032.txt",
+      "lacan_text_033.txt",
+      "lacan_text_034.txt",
+      "lacan_text_035.txt",
+      "lacan_text_036.txt",
+      "lacan_text_037.txt",
+      "lacan_text_039.txt",
+      "lacan_text_041.txt",
+      "lacan_text_042.txt",
+      "lacan_text_043.txt",
+      "lacan_text_044.txt",
+      "lacan_text_045.txt"
+    ],
+    "Validation": [
+      "lacan_text_001.txt",
+      "lacan_text_012.txt",
+      "lacan_text_020.txt",
+      "lacan_text_038.txt",
+      "lacan_text_040.txt"
+    ]
+  }
+}

@@ -6,19 +6,19 @@
 
 ## 当前生产方案
 
-- 模型：`google/gemma-4-12B-it`
-- 固定 revision：`707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7`
+- 模型：`Qwen/Qwen3.8-27B`
+- 固定 revision：`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`
 - 推理：NF4 4-bit、double quantization、BF16、batch size 1
 - 生成与审核：同一模型；产物会明确标记为 self-judged
 - 输入：`data/source/cleaned_corpus/paragraphs.jsonl`，32,028 行
 - 输入 SHA-256：`721050bef287bdd68846bfb0842ca4b917b56c37fbe45b8926f629f0b92744da`
-- 所有派生产物：`data/pipeline_v3/`（已被 Git 忽略）
+- 所有派生产物：`data/pipeline_v3/`（完整纳入 Git，便于跨设备恢复）
 
-已有实机 smoke 记录为峰值分配显存 7.53 GiB。默认配置允许模型最多使用
-10 GiB GPU 显存和 12 GiB CPU 内存，并允许自动 CPU offload。建议远程机器至少：
+已有实机 smoke 记录为峰值分配显存约 17.14 GiB。默认配置允许模型最多使用
+28 GiB GPU 显存和 64 GiB CPU 内存，并允许自动 CPU offload。建议远程机器至少：
 
-- NVIDIA GPU，12 GiB 显存；16 GiB 或以上更稳妥
-- 20 GiB 系统内存；24 GiB 或以上更稳妥
+- NVIDIA GPU，24 GiB 显存；32 GiB 或以上更稳妥
+- 64 GiB 系统内存
 - 50 GiB 可用磁盘（模型缓存、offload 和流水线产物）
 - 较新的 NVIDIA 驱动，以及 Python 3.11 或 3.12
 
@@ -57,10 +57,9 @@ PY
 [PyTorch 官方安装选择器](https://pytorch.org/get-started/locally/)重装对应 CUDA wheel，
 然后再次运行上面的自检。
 
-## Hugging Face 模型授权
+## Hugging Face 登录
 
-Gemma 是 gated model。运行前需要在 Hugging Face 页面接受模型许可，并让远程机
-登录有访问权的账号：
+如模型下载需要认证，让远程机登录有访问权的 Hugging Face 账号：
 
 ```bash
 hf auth login
@@ -83,7 +82,7 @@ smoke 会生成和审核 6 条记录，并再次执行相同阶段验证断点�
 
 ```bash
 lacanllm-pipeline-v3 \
-  --config configs/pipeline_v3/smoke_gemma4_12b.json \
+  --config configs/pipeline_v3/smoke_qwen3_8_27b.json \
   smoke
 ```
 
@@ -91,10 +90,10 @@ lacanllm-pipeline-v3 \
 
 ```bash
 lacanllm-pipeline-v3 \
-  --config configs/pipeline_v3/smoke_gemma4_12b.json \
+  --config configs/pipeline_v3/smoke_qwen3_8_27b.json \
   status
 
-sed -n '1,240p' data/pipeline_v3/smoke/gemma4_12b_qa_only/reports/smoke.json
+sed -n '1,240p' data/pipeline_v3/smoke/qwen3_8_27b_qa_only/reports/smoke.json
 ```
 
 已验证的 smoke 指标和行为见
@@ -170,8 +169,21 @@ ruff check .
 
 `data/source/cleaned_corpus/paragraphs.jsonl` 是只读输入快照，不应原地修改。新生成的
 队列、模型输出、判断、数据集、manifest 和报告必须继续写入版本化的
-`data/pipeline_v3/` 路径。完整的数据决策与审计约束见
+`data/pipeline_v3/` 路径。当前仓库有意完整版本化这些产物，包括各阶段中间记录，
+因此在其他设备 clone 后可以审计或恢复任意阶段。完整的数据决策与审计约束见
 [`docs/DATA_PIPELINE_V3_SIMPLIFIED_PLAN.md`](docs/DATA_PIPELINE_V3_SIMPLIFIED_PLAN.md)。
 
-流水线产物默认不提交到 Git。需要迁移运行中的任务时，应单独同步
-`data/pipeline_v3/` 和日志到持久磁盘；代码更新继续通过 `v3` 分支完成。
+## QLoRA 训练
+
+仓库已包含本次生产选出的 2,000 条 Train 和 250 条 Validation。新 GPU 设备安装
+训练依赖后，可以先执行一步真实 smoke，再启动完整训练：
+
+```bash
+python -m pip install -r requirements-training.txt
+python scripts/train_qlora.py --max-steps 1
+python scripts/train_qlora.py
+```
+
+训练默认使用 `Qwen/Qwen3.8-27B` 的固定 revision、NF4 4-bit 和 LoRA；输出写入
+`artifacts/training/qwen3_8_27b_qlora/`。Test 数据虽随完整快照保存，但在模型方案锁定前
+不应读取或用于调参，封存哈希见 `data/pipeline_v3/production/09_seal/test_seal.json`。

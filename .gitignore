@@ -22,7 +22,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
-data/pipeline_v3/
+# Pipeline v3 is intentionally versioned as a complete, portable snapshot.
+# This includes intermediate records, reports, errors, and selected splits.
 artifacts/pipeline_v3/
 models/
 offload/

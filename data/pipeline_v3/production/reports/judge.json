@@ -1,0 +1,20 @@
+{
+  "appended_rejections": 3,
+  "appended_rows": 9970,
+  "artifact_sha256": "b8d41321ad5252acc0d406e17a5a2598924eae01403bb6985212614f032674f8",
+  "backend_loaded": true,
+  "config_hash": "d6e2867fe14eb8d3738ef76e7df0f0fa419f8789f8822563925eb1edff885c78",
+  "generator_model_id": "Qwen/Qwen3.8-27B",
+  "generator_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "generator_prompt_version": "generate-v3.3",
+  "input_rows": 9973,
+  "judge_model_id": "Qwen/Qwen3.8-27B",
+  "judge_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "judge_prompt_version": "judge-v3.2",
+  "pipeline_version": "3.1.0",
+  "rejected_rows": 3,
+  "role": "judge",
+  "schema_version": "pipeline-v3-config-2",
+  "total_rows": 9970,
+  "wall_seconds": 82485.18249954004
+}
