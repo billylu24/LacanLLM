@@ -13,7 +13,7 @@ from lacanllm.pipeline_v3.records import hard_filter, judgment_passes, validate_
 from lacanllm.pipeline_v3.stages import SOURCE_ROWS, SOURCE_SHA256, audit, clean, deduplicate, queue, smoke, split
 
 REPO = Path(__file__).parents[1]
-SMOKE_CONFIG = REPO / "configs/pipeline_v3/smoke_gemma4_12b.json"
+SMOKE_CONFIG = REPO / "configs/pipeline_v3/smoke_qwen3_8_27b.json"
 
 
 @pytest.fixture(scope="session")

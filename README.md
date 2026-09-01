@@ -175,15 +175,25 @@ ruff check .
 
 ## QLoRA 训练
 
-仓库已包含本次生产选出的 2,000 条 Train 和 250 条 Validation。新 GPU 设备安装
-训练依赖后，可以先执行一步真实 smoke，再启动完整训练：
+仓库已包含本次生产选出的 2,000 条 Train 和 250 条 Validation。训练入口使用固定
+revision、NF4 4-bit、BF16 和 completion-only loss；Test 在最终配置锁定前保持封存。
+新 GPU 设备安装训练依赖后，先执行独立的一步 smoke：
 
 ```bash
 python -m pip install -r requirements-training.txt
-python scripts/train_qlora.py --max-steps 1
-python scripts/train_qlora.py
+python scripts/train_qlora.py --config configs/training/smoke_r8_1step.json
 ```
 
-训练默认使用 `Qwen/Qwen3.8-27B` 的固定 revision、NF4 4-bit 和 LoRA；输出写入
-`artifacts/training/qwen3_8_27b_qlora/`。Test 数据虽随完整快照保存，但在模型方案锁定前
-不应读取或用于调参，封存哈希见 `data/pipeline_v3/production/09_seal/test_seal.json`。
+中断后从该实验的最新 checkpoint 恢复：
+
+```bash
+python scripts/train_qlora.py \
+  --config configs/training/smoke_r8_1step.json \
+  --resume-from-checkpoint
+```
+
+一步 smoke 验收后才能复制正式配置并启动 rank 实验。每组输出使用独立的
+`artifacts/experiments/<experiment_name>/`；程序拒绝无意覆盖已有实验。Phase 1 审计结论、
+Phase 2 命令与验收方法见
+[`docs/QLORA_PHASE_1_2_PLAN.md`](docs/QLORA_PHASE_1_2_PLAN.md)。Test 封存哈希见
+`data/pipeline_v3/production/09_seal/test_seal.json`。
