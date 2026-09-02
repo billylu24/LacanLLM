@@ -1,0 +1,71 @@
+{
+  "experiments": [
+    {
+      "config": "configs/training/r8_lr1e4.json",
+      "finished_at": "2026-09-01T18:28:24.216776+00:00",
+      "name": "r8_lr1e4",
+      "output_dir": "artifacts/experiments/r8_lr1e4",
+      "status": "completed",
+      "training_status": "completed_existing"
+    },
+    {
+      "config": "configs/training/r16_lr1e4.json",
+      "evaluation_command": [
+        "/usr/local/bin/python",
+        "-u",
+        "scripts/evaluate_validation.py",
+        "--config",
+        "artifacts/experiments/rank_queue/r16_lr1e4_evaluation.json"
+      ],
+      "evaluation_pid": 10835,
+      "evaluation_return_code": 0,
+      "finished_at": "2026-09-01T21:34:10.412591+00:00",
+      "log": "artifacts/experiments/rank_queue/r16_lr1e4.log",
+      "name": "r16_lr1e4",
+      "output_dir": "artifacts/experiments/r16_lr1e4",
+      "started_at": "2026-09-01T18:28:24.225524+00:00",
+      "status": "completed",
+      "training_command": [
+        "/usr/local/bin/python",
+        "-u",
+        "scripts/train_qlora.py",
+        "--config",
+        "configs/training/r16_lr1e4.json"
+      ],
+      "training_pid": 2770,
+      "training_return_code": 0
+    },
+    {
+      "config": "configs/training/r32_lr1e4.json",
+      "evaluation_command": [
+        "/usr/local/bin/python",
+        "-u",
+        "scripts/evaluate_validation.py",
+        "--config",
+        "artifacts/experiments/rank_queue/r32_lr1e4_evaluation.json"
+      ],
+      "evaluation_pid": 18882,
+      "evaluation_return_code": 0,
+      "finished_at": "2026-09-02T00:43:11.881389+00:00",
+      "log": "artifacts/experiments/rank_queue/r32_lr1e4.log",
+      "name": "r32_lr1e4",
+      "output_dir": "artifacts/experiments/r32_lr1e4",
+      "started_at": "2026-09-01T21:34:10.421986+00:00",
+      "status": "completed",
+      "training_command": [
+        "/usr/local/bin/python",
+        "-u",
+        "scripts/train_qlora.py",
+        "--config",
+        "configs/training/r32_lr1e4.json"
+      ],
+      "training_pid": 11336,
+      "training_return_code": 0
+    }
+  ],
+  "finished_at": "2026-09-02T00:43:11.890126+00:00",
+  "queue_pid": 2769,
+  "queue_status": "completed",
+  "started_at": "2026-09-01T18:28:24.198042+00:00",
+  "updated_at": "2026-09-02T00:43:11.890133+00:00"
+}

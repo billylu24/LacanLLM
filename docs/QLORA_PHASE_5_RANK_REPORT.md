@@ -30,13 +30,24 @@ parameters and least VRAM. Increasing rank improved training loss but did not
 improve held-out Validation metrics, so the higher-rank adapters show no
 selection benefit under this controlled comparison.
 
-## Decision and retained artifacts
+## Decision and published artifacts
 
 Select **r=8 / alpha=16 / lr=1e-4** for the next locked-configuration stage.
 Do not run Test until that next-stage protocol is approved.
 
-The final adapters and resumable checkpoints are retained on the persistent
-training volume but are deliberately not committed: adapter files are
-approximately 233 MB (r=8), 467 MB (r=16), and 934 MB (r=32), while GitHub
-rejects individual files above 100 MB. Publishing binary adapters requires an
-explicit Git LFS or model-registry release decision.
+All three final adapter packages are committed under `artifacts/experiments/`
+with their SafeTensors weights stored through Git LFS. Each package includes
+the adapter configuration, tokenizer, chat template, and training arguments,
+so it can be loaded directly with the pinned base revision. Run `git lfs pull`
+after cloning to download the actual weights rather than only their pointers.
+
+| Rank | Adapter SHA-256 |
+|---:|---|
+| 8 | `cf79b3e9de83a4b1c3d8faa0be682970a6d63e57d6cdfcebf431798a557d1c3d` |
+| 16 | `2abb15c98ee2ef58e2709d57edccafec30938ab3a44db6ebafe65cfd31c59c29` |
+| 32 | `2bc02efbd2318e60f4b8664c35fcdacae00c475e23f56df1a6da5315504b053f` |
+
+Resumable intermediate checkpoints remain on the persistent training volume;
+they are not published because they duplicate adapter weights and optimizer
+state at earlier steps. The complete per-step history, raw console logs,
+evaluation logs, generated samples, configs, and final metadata are published.
