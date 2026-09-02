@@ -1,0 +1,23 @@
+{
+  "adapter_path": "artifacts/experiments/r16_lr1e4/adapter",
+  "config_sha256": "1dd78dee0869e5b622a0084d0586f7aff877457bf3574f125fce80563cfa7756",
+  "end_to_end_seconds": 304.29448769800365,
+  "evaluation_name": "r16_lr1e4_validation",
+  "evaluation_seconds": 176.85828122193925,
+  "generation_rows": 16,
+  "gpu": "NVIDIA RTX PRO 4500 Blackwell Server Edition",
+  "mean_token_f1": 0.7631735528630168,
+  "model_id": "Qwen/Qwen3.8-27B",
+  "peak_gpu_vram_bytes": 19808852992,
+  "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "seed": 3407,
+  "software": {
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.8.1"
+  },
+  "supervised_assistant_tokens": 17700,
+  "validation_loss": 0.14525878342986107,
+  "validation_rows": 250,
+  "validation_sha256": "d12be94757cc2707cd313b1c137b105db3c2aba067bd6647f56523ab57780a13"
+}

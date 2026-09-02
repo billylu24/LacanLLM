@@ -1,0 +1,48 @@
+{
+  "adapter_path": "artifacts/experiments/r16_lr1e4/adapter",
+  "config_sha256": "1dd78dee0869e5b622a0084d0586f7aff877457bf3574f125fce80563cfa7756",
+  "dataset": {
+    "expected_validation_rows": 250,
+    "expected_validation_sha256": "d12be94757cc2707cd313b1c137b105db3c2aba067bd6647f56523ab57780a13",
+    "validation_file": "data/pipeline_v3/production/08_select/validation.jsonl",
+    "version": "pipeline-v3.1.0-production"
+  },
+  "evaluation": {
+    "generation_indices": [
+      0,
+      17,
+      33,
+      50,
+      66,
+      83,
+      100,
+      116,
+      133,
+      149,
+      166,
+      183,
+      199,
+      216,
+      232,
+      249
+    ],
+    "max_new_tokens": 256,
+    "max_seq_length": 1024
+  },
+  "evaluation_name": "r16_lr1e4_validation",
+  "model": {
+    "dtype": "bfloat16",
+    "expected_architecture": "Qwen3_5ForConditionalGeneration",
+    "expected_model_type": "qwen3_5",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "output_dir": "artifacts/experiments/r16_lr1e4/validation_evaluation",
+  "quantization": {
+    "double_quant": true,
+    "load_in_4bit": true,
+    "quant_type": "nf4"
+  },
+  "schema_version": "validation-evaluation-v1",
+  "seed": 3407
+}

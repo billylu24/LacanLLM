@@ -1,0 +1,88 @@
+{
+  "config_sha256": "58bf07176486fb117949704d78ea224f0b520633372d30ffb72fac2c3f355964",
+  "dataset": {
+    "expected_train_rows": 2000,
+    "expected_train_sha256": "d8ba14de311d0420d2daa15df0a848cfa62105a3dac4e9ae6475da57685a3442",
+    "expected_validation_rows": 250,
+    "expected_validation_sha256": "d12be94757cc2707cd313b1c137b105db3c2aba067bd6647f56523ab57780a13",
+    "train_file": "data/pipeline_v3/production/08_select/train.jsonl",
+    "validation_file": "data/pipeline_v3/production/08_select/validation.jsonl",
+    "version": "pipeline-v3.1.0-production"
+  },
+  "experiment_name": "r32_lr1e4",
+  "lora": {
+    "alpha": 64,
+    "dropout": 0.0,
+    "expected_target_counts": {
+      "down_proj": 64,
+      "gate_proj": 64,
+      "in_proj_a": 48,
+      "in_proj_b": 48,
+      "in_proj_qkv": 48,
+      "in_proj_z": 48,
+      "k_proj": 16,
+      "o_proj": 16,
+      "out_proj": 48,
+      "q_proj": 16,
+      "up_proj": 64,
+      "v_proj": 16
+    },
+    "rank": 32,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "in_proj_a",
+      "in_proj_b",
+      "in_proj_qkv",
+      "in_proj_z",
+      "out_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "target_scope": "model.language_model.layers."
+  },
+  "model": {
+    "dtype": "bfloat16",
+    "expected_architecture": "Qwen3_5ForConditionalGeneration",
+    "expected_model_type": "qwen3_5",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "parameter_count": 27781427952,
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "output_dir": "artifacts/experiments/r32_lr1e4",
+  "quantization": {
+    "double_quant": true,
+    "load_in_4bit": true,
+    "quant_type": "nf4"
+  },
+  "schema_version": "qlora-training-v1",
+  "seed": 3407,
+  "training": {
+    "epochs": 3,
+    "eval_steps": 125,
+    "full_determinism": false,
+    "gradient_accumulation_steps": 8,
+    "gradient_checkpointing": true,
+    "learning_rate": 0.0001,
+    "load_best_model_at_end": true,
+    "logging_steps": 1,
+    "lr_scheduler_type": "linear",
+    "max_eval_samples": null,
+    "max_grad_norm": 0.3,
+    "max_seq_length": 1024,
+    "max_steps": -1,
+    "max_train_samples": null,
+    "optimizer": "paged_adamw_8bit",
+    "per_device_eval_batch_size": 1,
+    "per_device_train_batch_size": 1,
+    "report_to": "none",
+    "save_steps": 125,
+    "save_total_limit": 3,
+    "tf32": true,
+    "warmup_steps": 20,
+    "weight_decay": 0.0
+  }
+}

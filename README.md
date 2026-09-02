@@ -203,4 +203,7 @@ adapter 重新加载；结果与限制见
 [`docs/QLORA_PHASE_3_REPORT.md`](docs/QLORA_PHASE_3_REPORT.md)。Phase 4 Base baseline 使用完整
 250 条 Validation，得到 completion-only loss `0.67864`；固定 16 条生成样本的 mean token-F1
 为 `0.56849`。Phase 5 使用 `scripts/run_rank_queue.py` 串行运行 r=8/16/32，并在每组结束后
-生成同口径 Validation 对比。Test 仍保持封存。
+生成同口径 Validation 对比。Phase 5 已完成：r=8 在完整 Validation loss（`0.14189`）和固定
+16 条生成样本 mean token-F1（`0.77090`）上均为最佳，故选为下一阶段配置。完整实验结果、
+选择依据和二进制 adapter 发布限制见 [`docs/QLORA_PHASE_5_RANK_REPORT.md`](docs/QLORA_PHASE_5_RANK_REPORT.md)。
+Test 仍保持封存。
